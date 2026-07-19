@@ -1,0 +1,19 @@
+{
+  "functions": {
+    "targets": [
+      "getCrimeTrends",
+      "getCrimeCategoryBreakdown",
+      "getDistrictCrimeStats",
+      "detectAnomalies",
+      "getNetworkData",
+      "predictCrimeRisk",
+      "getHiddenCorrelations",
+      "getSocioEconomicCorrelation"
+    ],
+    "ignore": [],
+    "source": "functions"
+  },
+  "client": {
+    "source": "client"
+  }
+}

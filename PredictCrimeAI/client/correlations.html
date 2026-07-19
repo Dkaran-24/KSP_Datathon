@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KSP Intelligence — Hidden Correlations</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: #e2e8f0;
+      min-height: 100vh;
+    }
+
+    .container { display: flex; height: 100vh; }
+    
+    .sidebar {
+      width: 240px;
+      background: rgba(15, 23, 42, 0.95);
+      border-right: 1px solid rgba(100, 116, 139, 0.3);
+      padding: 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .logo { font-size: 18px; font-weight: bold; margin-bottom: 30px; }
+    .logo-icon { font-size: 24px; margin-right: 8px; }
+
+    .menu-link {
+      display: block;
+      padding: 12px 16px;
+      margin-bottom: 8px;
+      border-radius: 6px;
+      text-decoration: none;
+      color: #cbd5e1;
+      transition: all 0.2s;
+      font-size: 14px;
+    }
+
+    .menu-link:hover { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+    .menu-link.active { background: rgba(59, 130, 246, 0.25); color: #3b82f6; font-weight: 600; }
+
+    .spacer { flex: 1; }
+
+    .main { flex: 1; display: flex; flex-direction: column; }
+
+    .header {
+      background: rgba(30, 41, 59, 0.8);
+      border-bottom: 1px solid rgba(100, 116, 139, 0.3);
+      padding: 20px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header-title { font-size: 24px; font-weight: 700; }
+
+    .logout-icon-btn {
+      background: none;
+      border: none;
+      color: #ef4444;
+      cursor: pointer;
+      font-size: 14px;
+      padding: 8px 12px;
+      border-radius: 4px;
+      transition: all 0.2s;
+    }
+
+    .logout-icon-btn:hover { background: rgba(239, 68, 68, 0.1); }
+
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 30px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+    }
+
+    .card {
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid rgba(100, 116, 139, 0.2);
+      border-radius: 12px;
+      padding: 24px;
+      backdrop-filter: blur(10px);
+    }
+
+    .card-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 20px;
+      color: #3b82f6;
+    }
+
+    .controls {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .btn {
+      padding: 10px 16px;
+      background: #3b82f6;
+      border: none;
+      border-radius: 6px;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 14px;
+    }
+
+    .btn:hover { background: #2563eb; }
+    .btn:disabled { background: #64748b; cursor: not-allowed; }
+
+    .correlation-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .correlation-table thead {
+      background: rgba(59, 130, 246, 0.1);
+      border-bottom: 2px solid rgba(59, 130, 246, 0.3);
+    }
+
+    .correlation-table th, .correlation-table td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid rgba(100, 116, 139, 0.2);
+    }
+
+    .correlation-value {
+      font-weight: 600;
+      padding: 4px 8px;
+      border-radius: 4px;
+    }
+
+    .positive { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
+    .negative { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+
+    .cluster-item {
+      background: rgba(59, 130, 246, 0.1);
+      border-left: 3px solid #3b82f6;
+      padding: 12px;
+      margin-bottom: 12px;
+      border-radius: 4px;
+    }
+
+    .cluster-name { font-weight: 600; margin-bottom: 6px; }
+    .cluster-info { font-size: 12px; color: #94a3b8; }
+    .cluster-districts { font-size: 12px; margin-top: 6px; }
+
+    .district-tag {
+      display: inline-block;
+      background: rgba(100, 116, 139, 0.2);
+      padding: 3px 8px;
+      border-radius: 3px;
+      margin-right: 6px;
+      margin-top: 4px;
+      font-size: 11px;
+    }
+
+    .status {
+      padding: 12px 16px;
+      background: rgba(59, 130, 246, 0.1);
+      border-left: 3px solid #3b82f6;
+      border-radius: 4px;
+      margin-bottom: 20px;
+      font-size: 13px;
+      color: #94a3b8;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #3b82f6;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-right: 8px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: #64748b;
+    }
+
+    .empty-state-icon { font-size: 48px; margin-bottom: 12px; }
+
+    .full-width {
+      grid-column: 1 / -1;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="sidebar">
+      <div class="logo">
+        <span class="logo-icon">🔐</span>KSP Intelligence
+      </div>
+      <a href="index.html" class="menu-link">🗺 Strategic Command</a>
+      <a href="category.html" class="menu-link">📊 Category Breakdown</a>
+      <a href="trends.html" class="menu-link">📈 Historical Trends</a>
+      <a href="network.html" class="menu-link">🕸 Link Analysis</a>
+      <a href="anomalies.html" class="menu-link">🚨 Anomaly Alerts</a>
+      <a href="risk.html" class="menu-link">🔮 Predictive Risk</a>
+      <a href="correlations.html" class="menu-link active">🔗 Hidden Correlations</a>
+      <a href="diagnostic.html" class="menu-link">⚙ Diagnostics</a>
+      <div class="spacer"></div>
+      <button class="logout-icon-btn" onclick="handleLogout()">🚪 Logout</button>
+    </div>
+
+    <div class="main">
+      <div class="header">
+        <div class="header-title">🔗 Hidden Correlations & District Clustering</div>
+        <div></div>
+      </div>
+
+      <div class="content">
+        <!-- Correlations Card -->
+        <div class="card">
+          <div class="card-title">Crime-Type Correlations</div>
+          <div class="controls">
+            <button class="btn" onclick="loadCorrelations()">Generate Analysis</button>
+          </div>
+          <div id="corr-status" class="status" style="display:none;"></div>
+          <div id="corr-table-container"></div>
+        </div>
+
+        <!-- Clusters Card -->
+        <div class="card">
+          <div class="card-title">District Crime-Profile Clusters</div>
+          <div class="controls">
+            <label style="font-size:12px; color:#94a3b8;">
+              Clusters: <input type="number" id="cluster-k" value="4" min="2" max="8" style="width:50px; padding:4px; border-radius:3px; border:1px solid #475569; background:#1e293b; color:#e2e8f0;">
+            </label>
+          </div>
+          <div id="cluster-status" class="status" style="display:none;"></div>
+          <div id="cluster-container"></div>
+        </div>
+
+        <!-- District Profiles Card (full width) -->
+        <div class="card full-width">
+          <div class="card-title">All District Crime Profiles</div>
+          <div id="profiles-status" class="status" style="display:none;"></div>
+          <div id="profiles-table-container"></div>
+        </div>
+
+        <!-- Socio-Economic Correlation Overlay (additive intelligence card) -->
+        <div class="card full-width">
+          <div class="card-title">Socio-Economic Correlation Overlay</div>
+          <div class="controls"><button class="btn" onclick="loadSocioEconomic()">Analyze Indicators</button></div>
+          <div id="se-status" class="status" style="display:none;"></div>
+          <div id="se-container"></div>
+        </div>
+
+        <!-- Inter-District Similarity (additive intelligence card) -->
+        <div class="card full-width">
+          <div class="card-title">Inter-District Similarity Ranking</div>
+          <div id="sim-status" class="status" style="display:none;"></div>
+          <div id="sim-container"></div>
+        </div>
+
+        <!-- Complainant Demographics (additive real-data card from ComplainantDetails) -->
+        <div class="card full-width">
+          <div class="card-title">Complainant Demographics Overlay</div>
+          <div id="demo-status" class="status" style="display:none;"></div>
+          <div id="demo-container"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const isLocal = window.location.hostname === "localhost" || 
+                    window.location.hostname === "127.0.0.1" || 
+                    window.location.protocol === "file:";
+    const BASE = isLocal || window.location.hostname.includes(".development.")
+        ? "https://predictcrimeai-60074448608.development.catalystserverless.in"
+        : "https://predictcrimeai-60074448608.catalystserverless.in";
+    const FUNCTION_URL = isLocal
+      ? BASE + "/server/getHiddenCorrelations/execute"
+      : "/server/getHiddenCorrelations/execute";
+
+    function handleLogout() {
+      sessionStorage.removeItem('authToken');
+      window.location.href = 'login.html';
+    }
+
+    function showStatus(containerId, text, isLoading = false) {
+      const el = document.getElementById(containerId);
+      el.innerHTML = (isLoading ? '<span class="spinner"></span>' : '') + text;
+      el.style.display = 'block';
+    }
+
+    function loadCorrelations() {
+      showStatus('corr-status', 'Analyzing crime-type correlations...', true);
+      
+      fetch(`${FUNCTION_URL}`)
+        .then(r => r.json())
+        .then(raw => {
+          const data = JSON.parse(raw.output || '{}');
+          if (!data.success) {
+            showStatus('corr-status', '❌ Error: ' + data.error);
+            return;
+          }
+
+          const corrs = data.correlations || [];
+          if (corrs.length === 0) {
+            document.getElementById('corr-table-container').innerHTML = 
+              '<div class="empty-state"><div class="empty-state-icon">📊</div><p>No significant correlations found.</p></div>';
+            showStatus('corr-status', '✓ Analysis complete');
+            return;
+          }
+
+          let html = '<table class="correlation-table"><thead><tr><th>Crime Type A</th><th>Crime Type B</th><th>Correlation</th><th>Strength</th><th>Direction</th></tr></thead><tbody>';
+          corrs.forEach(c => {
+            const cls = c.correlation > 0 ? 'positive' : 'negative';
+            html += `<tr>
+              <td>${c.crimeA}</td>
+              <td>${c.crimeB}</td>
+              <td><span class="correlation-value ${cls}">${c.correlation.toFixed(3)}</span></td>
+              <td>${c.strength}</td>
+              <td>${c.direction}</td>
+            </tr>`;
+          });
+          html += '</tbody></table>';
+          document.getElementById('corr-table-container').innerHTML = html;
+          showStatus('corr-status', `✓ Found ${corrs.length} significant correlations`);
+        })
+        .catch(e => showStatus('corr-status', '❌ Fetch failed: ' + e.message));
+    }
+
+    function loadClusters() {
+      const k = document.getElementById('cluster-k').value;
+      showStatus('cluster-status', `Computing k-means clusters (k=${k})...`, true);
+
+      fetch(`${FUNCTION_URL}?k=${k}`)
+        .then(r => r.json())
+        .then(raw => {
+          const data = JSON.parse(raw.output || '{}');
+          if (!data.success) {
+            showStatus('cluster-status', '❌ Error: ' + data.error);
+            return;
+          }
+
+          const clusters = data.clusters || [];
+          let html = '';
+          clusters.forEach(cl => {
+            const dists = (cl.districts || []).join(', ');
+            const crimes = (cl.dominantCrimeTypes || []).join(', ');
+            html += `
+              <div class="cluster-item">
+                <div class="cluster-name">Cluster ${cl.clusterId + 1}</div>
+                <div class="cluster-info">${cl.districtCount} district(s)</div>
+                <div class="cluster-districts">
+                  <strong>Districts:</strong><br>
+                  <span class="district-tag">${dists}</span>
+                </div>
+                <div class="cluster-districts" style="margin-top:8px;">
+                  <strong>Dominant Crimes:</strong> ${crimes || 'N/A'}
+                </div>
+              </div>
+            `;
+          });
+          document.getElementById('cluster-container').innerHTML = html || '<div class="empty-state"><p>No clusters generated.</p></div>';
+          showStatus('cluster-status', `✓ ${clusters.length} clusters found`);
+        })
+        .catch(e => showStatus('cluster-status', '❌ Fetch failed: ' + e.message));
+    }
+
+    function loadProfiles() {
+      showStatus('profiles-status', 'Loading district profiles...', true);
+
+      fetch(`${FUNCTION_URL}`)
+        .then(r => r.json())
+        .then(raw => {
+          const data = JSON.parse(raw.output || '{}');
+          if (!data.success) {
+            showStatus('profiles-status', '❌ Error: ' + data.error);
+            return;
+          }
+
+          const profiles = data.districtProfiles || [];
+          if (profiles.length === 0) {
+            document.getElementById('profiles-table-container').innerHTML = 
+              '<div class="empty-state"><p>No district profiles.</p></div>';
+            return;
+          }
+
+          let html = '<table class="correlation-table"><thead><tr><th>District</th><th>Total Cases</th><th>Crime Profile (Top 3)</th></tr></thead><tbody>';
+          profiles.forEach(p => {
+            const profile = p.profile || {};
+            const top3 = Object.entries(profile)
+              .sort((a, b) => b[1] - a[1])
+              .slice(0, 3)
+              .map(([k, v]) => `${k}: ${(v*100).toFixed(0)}%`)
+              .join(', ');
+            html += `<tr><td>${p.districtName}</td><td>${p.totalCases}</td><td style="font-size:12px;">${top3}</td></tr>`;
+          });
+          html += '</tbody></table>';
+          document.getElementById('profiles-table-container').innerHTML = html;
+          showStatus('profiles-status', `✓ Loaded ${profiles.length} districts`);
+        })
+        .catch(e => showStatus('profiles-status', '❌ Fetch failed: ' + e.message));
+    }
+
+    function loadSocioEconomic() {
+      showStatus('se-status', 'Analyzing socio-economic indicators...', true);
+      fetch(`${FUNCTION_URL}`)
+        .then(r => r.json())
+        .then(raw => {
+          const data = JSON.parse(raw.output || '{}');
+          if (!data.success) { showStatus('se-status', '\u274c Error: ' + data.error); return; }
+          const secs = data.socio_economic_correlations || [];
+          let html = '';
+          if (secs.length === 0) {
+            html = '<div class="empty-state"><p>No socio-economic correlation data available.</p></div>';
+          } else {
+            html = '<table class="correlation-table"><thead><tr><th>Indicator</th><th>Crime Volume Corr (r)</th><th>Strength</th><th>Interpretation</th></tr></thead><tbody>';
+            secs.forEach(se => {
+              const cls = se.correlation > 0 ? 'positive' : 'negative';
+              html += `<tr><td>${se.indicator || se.name}</td><td><span class="correlation-value ${cls}">${Number(se.correlation).toFixed(3)}</span></td><td>${se.strength || '\u2014'}</td><td style="font-size:12px;color:#94a3b8">${se.interpretation || ''}</td></tr>`;
+            });
+            html += '</tbody></table>';
+          }
+          const sims = data.inter_district_similarity || [];
+          let simHtml = '';
+          if (sims.length === 0) {
+            simHtml = '<div class="empty-state"><p>No inter-district similarity data available.</p></div>';
+          } else {
+            simHtml = '<table class="correlation-table"><thead><tr><th>District A</th><th>District B</th><th>Similarity Score</th></tr></thead><tbody>';
+            sims.slice(0, 15).forEach(p => {
+              const sc = p.similarity_score != null ? Number(p.similarity_score).toFixed(0) : '\u2014';
+              const col = sc >= 80 ? '#ef4444' : sc >= 60 ? '#f97316' : sc >= 40 ? '#eab308' : '#10b981';
+              simHtml += `<tr><td>${p.district_a || p.districtA}</td><td>${p.district_b || p.districtB}</td><td><span class="correlation-value positive" style="color:${col}">${sc}/100</span></td></tr>`;
+            });
+            simHtml += '</tbody></table>';
+          }
+          document.getElementById('se-container').innerHTML = html;
+          document.getElementById('sim-container').innerHTML = simHtml;
+          // Complainant Demographics (additive - from ComplainantDetails table)
+          const demo = data.complainant_demographics;
+          let demoHtml = '';
+          if (!demo) {
+            demoHtml = '<div class="empty-state"><p>Complainant demographics not available (ComplainantDetails table not yet imported).</p></div>';
+          } else {
+            demoHtml = '<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px; margin-bottom:12px;">';
+            // Gender distribution
+            if (demo.gender_distribution && demo.gender_distribution.length) {
+              demoHtml += '<div><div class="card-title" style="font-size:13px; margin-bottom:8px">Gender Distribution</div>' + demo.gender_distribution.map(g => `<div style="display:flex; justify-content:space-between; padding:4px 0; font-size:12px;"><span style="color:#94a3b8">${g.label || g.gender}</span><b>${g.count != null ? g.count.toLocaleString() : '\u2014'} (${g.percent != null ? Number(g.percent).toFixed(1) : '?'}%)</b></div>`).join('') + '</div>';
+            }
+            // Religion distribution
+            if (demo.religion_distribution && demo.religion_distribution.length) {
+              demoHtml += '<div><div class="card-title" style="font-size:13px; margin-bottom:8px">Religion Distribution</div>' + demo.religion_distribution.map(r => `<div style="display:flex; justify-content:space-between; padding:4px 0; font-size:12px;"><span style="color:#94a3b8">${r.label || r.religion}</span><b>${r.count != null ? r.count.toLocaleString() : '\u2014'} (${r.percent != null ? Number(r.percent).toFixed(1) : '?'}%)</b></div>`).join('') + '</div>';
+            }
+            // Age band distribution
+            if (demo.age_band_distribution && demo.age_band_distribution.length) {
+              demoHtml += '<div><div class="card-title" style="font-size:13px; margin-bottom:8px">Age Band Distribution</div>' + demo.age_band_distribution.map(a => `<div style="display:flex; justify-content:space-between; padding:4px 0; font-size:12px;"><span style="color:#94a3b8">${a.label || a.band}</span><b>${a.count != null ? a.count.toLocaleString() : '\u2014'} (${a.percent != null ? Number(a.percent).toFixed(1) : '?'}%)</b></div>`).join('') + '</div>';
+            }
+            demoHtml += '</div>';
+            if (demo.insight) {
+              demoHtml += `<div style="margin-top:8px; padding:10px 14px; background:rgba(15,23,42,0.6); border:1px solid rgba(255,255,255,0.06); border-radius:8px; color:#94a3b8; font-size:12px; line-height:1.5">📊 ${demo.insight}</div>`;
+            }
+          }
+          document.getElementById('demo-container').innerHTML = demoHtml;
+          showStatus('demo-status', demo ? '\u2713 Complainant demographics loaded' : '\u26a0 ComplainantDetails table not available');
+          showStatus('se-status', `\u2713 ${secs.length} indicator correlations \u00b7 ${sims.length} similar pairs`);
+          showStatus('sim-status', `\u2713 ${sims.length} similar district pairs ranked`);
+        })
+        .catch(e => { showStatus('se-status', '\u274c Fetch failed: ' + e.message); showStatus('sim-status', '\u274c Fetch failed: ' + e.message); });
+    }
+
+    // Load all on page load
+    window.addEventListener('load', () => {
+      loadCorrelations();
+      loadClusters();
+      loadProfiles();
+      loadSocioEconomic();
+    });
+
+    // Reload clusters when k changes
+    document.getElementById('cluster-k').addEventListener('change', loadClusters);
+  </script>
+</body>
+</html>

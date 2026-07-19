@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>KSP Strategic Intelligence Hub - Login</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background-color: #0b0f19;
+      color: #f1f5f9;
+      font-family: 'Outfit', sans-serif;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Ambient Background Glows */
+    .glow-1 {
+      position: absolute;
+      top: 20%;
+      left: 15%;
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(59, 130, 246, 0.12) 0%, rgba(59, 130, 246, 0) 70%);
+      pointer-events: none;
+      z-index: 1;
+    }
+    .glow-2 {
+      position: absolute;
+      bottom: 20%;
+      right: 15%;
+      width: 450px;
+      height: 450px;
+      background: radial-gradient(circle, rgba(239, 68, 68, 0.08) 0%, rgba(239, 68, 68, 0) 70%);
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .login-container {
+      background: rgba(15, 23, 42, 0.45);
+      border: 1px solid rgba(59, 130, 246, 0.2);
+      backdrop-filter: blur(15px);
+      -webkit-backdrop-filter: blur(15px);
+      border-radius: 16px;
+      padding: 40px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 40px rgba(59, 130, 246, 0.1);
+      z-index: 10;
+      animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .header-logo {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .logo-badge {
+      font-size: 40px;
+      margin-bottom: 12px;
+      display: inline-block;
+      animation: pulse 2.5s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); filter: drop-shadow(0 0 5px rgba(59,130,246,0.3)); }
+      50% { transform: scale(1.05); filter: drop-shadow(0 0 15px rgba(59,130,246,0.6)); }
+    }
+    .header-logo h2 {
+      font-size: 20px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    .header-logo p {
+      font-size: 12px;
+      color: #64748b;
+      margin-top: 4px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+      position: relative;
+    }
+    .form-group label {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+    .form-control {
+      width: 100%;
+      background: #070a13;
+      border: 1px solid rgba(59, 130, 246, 0.2);
+      border-radius: 8px;
+      padding: 12px 16px;
+      color: #fff;
+      font-size: 14px;
+      font-family: inherit;
+      outline: none;
+      transition: all 0.3s;
+    }
+    .form-control:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 10px rgba(59, 130, 246, 0.2);
+      background: #090d19;
+    }
+
+    .login-btn {
+      width: 100%;
+      background: linear-gradient(135deg, #1d4ed8, #3b82f6);
+      border: none;
+      color: #fff;
+      font-weight: 700;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+      transition: all 0.3s;
+      margin-top: 10px;
+    }
+    .login-btn:hover {
+      background: linear-gradient(135deg, #2563eb, #60a5fa);
+      box-shadow: 0 6px 20px rgba(59, 130, 246, 0.6);
+      transform: translateY(-1px);
+    }
+    .login-btn:active {
+      transform: translateY(0);
+    }
+
+    .footer-bar {
+      margin-top: 30px;
+      text-align: center;
+      font-size: 11px;
+      color: #475569;
+      border-top: 1px solid rgba(255,255,255,0.05);
+      padding-top: 16px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="glow-1"></div>
+  <div class="glow-2"></div>
+
+  <div class="login-container">
+    <div class="header-logo">
+      <div class="logo-badge">🚨</div>
+      <h2>Strategic Intelligence Hub</h2>
+      <p>KSP Crime Intelligence Unit</p>
+    </div>
+
+    <form id="loginForm" onsubmit="handleLogin(event)">
+      <div class="form-group">
+        <label for="username">Officer Username</label>
+        <input type="text" id="username" class="form-control" placeholder="e.g. SP-BENGALURU" required value="SP-BENGALURU">
+      </div>
+      <div class="form-group">
+        <label for="password">Security Credentials</label>
+        <input type="password" id="password" class="form-control" placeholder="••••••••" required value="••••••••">
+      </div>
+      <button type="submit" class="login-btn">Secure Authorization</button>
+    </form>
+
+    <div class="footer-bar">
+      Confidential Portal // Restricted Access
+    </div>
+  </div>
+
+  <script>
+    function handleLogin(e) {
+      e.preventDefault();
+      const user = document.getElementById("username").value.trim() || "SP-BENGALURU";
+      localStorage.setItem("loggedIn", "true");
+      localStorage.setItem("username", user);
+      window.location.href = "index.html";
+    }
+  </script>
+</body>
+</html>

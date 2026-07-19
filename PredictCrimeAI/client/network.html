@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>CrimePredictAI — Relational Network & Link Analysis</title>
+  <script src="https://unpkg.com/vis-network@9.1.6/standalone/umd/vis-network.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      margin: 0;
+      padding: 0;
+      background: #0b0f19;
+      color: #f1f5f9;
+      font-family: 'Inter', sans-serif;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Left Sidebar Navigation */
+    .sidebar-nav {
+      width: 260px;
+      height: 100vh;
+      background: #0f172a;
+      border-right: 1px solid rgba(59, 130, 246, 0.15);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      z-index: 100;
+    }
+    .sidebar-brand {
+      padding: 24px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .brand-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .brand-subtitle {
+      font-size: 10px;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 4px;
+    }
+    .sidebar-menu {
+      flex: 1;
+      padding: 20px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      overflow-y: auto;
+    }
+    .menu-link {
+      text-decoration: none;
+      color: #94a3b8;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 10px 16px;
+      border-radius: 8px;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .menu-link:hover {
+      color: #3b82f6;
+      background: rgba(59, 130, 246, 0.06);
+    }
+    .menu-link.active {
+      color: #fff;
+      background: linear-gradient(135deg, #1d4ed8, #3b82f6);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+    }
+    .sidebar-footer {
+      padding: 20px;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .dispatch-btn {
+      width: 100%;
+      background: #7f1d1d;
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      padding: 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.3s;
+    }
+    .dispatch-btn:hover {
+      background: #ef4444;
+      color: #fff;
+      box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+    }
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: #10b981;
+    }
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #10b981;
+      animation: pulse-dot 1.5s infinite;
+    }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    .help-link {
+      font-size: 11px;
+      color: #64748b;
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .help-link:hover {
+      color: #94a3b8;
+    }
+
+    /* Main Content Wrapper */
+    .main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Top Header Panel */
+    .top-header {
+      height: 70px;
+      background: #0f172a;
+      border-bottom: 1px solid rgba(59, 130, 246, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      flex-shrink: 0;
+    }
+    .header-left h1 {
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+      margin: 0;
+      letter-spacing: 0.5px;
+    }
+    .search-box {
+      width: 320px;
+      position: relative;
+    }
+    .search-box input {
+      width: 100%;
+      background: #0b0f19;
+      border: 1px solid rgba(59, 130, 246, 0.2);
+      border-radius: 8px;
+      padding: 8px 16px;
+      color: #fff;
+      font-size: 12px;
+      outline: none;
+      transition: border-color 0.3s;
+    }
+    .search-box input:focus {
+      border-color: #3b82f6;
+    }
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .icon-action {
+      color: #94a3b8;
+      cursor: pointer;
+      font-size: 16px;
+      transition: color 0.2s;
+    }
+    .icon-action:hover {
+      color: #fff;
+    }
+    .user-profile {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(30, 41, 59, 0.5);
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(59, 130, 246, 0.1);
+      font-size: 11px;
+    }
+    .user-profile b {
+      color: #fff;
+    }
+    .user-profile span {
+      color: #64748b;
+      font-size: 10px;
+    }
+    .logout-icon-btn {
+      background: none;
+      border: none;
+      color: #f87171;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      padding: 6px 12px;
+      border-radius: 6px;
+      transition: all 0.3s;
+      border: 1px solid rgba(248, 113, 113, 0.2);
+      background: rgba(248, 113, 113, 0.05);
+    }
+    .logout-icon-btn:hover {
+      background: rgba(239, 68, 68, 0.8);
+      color: #fff;
+      border-color: #ef4444;
+    }
+
+    #container {
+      display: flex;
+      flex: 1;
+      min-height: 0;
+      position: relative;
+    }
+    
+    #network {
+      flex: 1;
+      height: 100%;
+      background: #0f172a;
+    }
+    
+    #sidebar {
+      width: 320px;
+      background: #0f172a;
+      border-left: 1px solid rgba(59, 130, 246, 0.15);
+      padding: 24px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    h2 {
+      font-size: 18px;
+      font-weight: 700;
+      color: #60a5fa;
+      margin-bottom: 6px;
+    }
+    p.desc {
+      font-size: 12px;
+      color: #94a3b8;
+      line-height: 1.5;
+    }
+    
+    .filter-card {
+      background: rgba(30, 41, 59, 0.5);
+      border: 1px solid rgba(59, 130, 246, 0.1);
+      border-radius: 12px;
+      padding: 16px;
+    }
+    .filter-card label {
+      display: block;
+      font-size: 11px;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+    .filter-card input, .filter-card select {
+      width: 100%;
+      background: #0b0f19;
+      border: 1px solid rgba(59, 130, 246, 0.2);
+      border-radius: 6px;
+      padding: 8px 12px;
+      color: #f1f5f9;
+      font-size: 13px;
+      margin-bottom: 12px;
+    }
+    .filter-card button {
+      width: 100%;
+      background: #3b82f6;
+      border: none;
+      color: #fff;
+      font-weight: 600;
+      font-size: 13px;
+      padding: 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .filter-card button:hover {
+      background: #2563eb;
+    }
+
+    #info-panel {
+      background: rgba(30, 41, 59, 0.45);
+      border: 1px solid rgba(59, 130, 246, 0.2);
+      border-radius: 12px;
+      padding: 20px;
+      display: none;
+      animation: fadeIn 0.3s ease;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .profile-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      padding-bottom: 8px;
+    }
+    .profile-header h3 {
+      font-size: 14px;
+      font-weight: 700;
+      color: #60a5fa;
+      margin: 0;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .profile-badge {
+      font-size: 9px;
+      font-weight: 800;
+      background: #7f1d1d;
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      padding: 2px 8px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .offender-card {
+      display: flex;
+      gap: 12px;
+      background: rgba(15, 23, 42, 0.4);
+      border: 1px solid rgba(59, 130, 246, 0.1);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 16px;
+    }
+    .offender-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 6px;
+      background: rgba(59, 130, 246, 0.15);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+    .offender-details h4 {
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 2px;
+    }
+    .offender-details p {
+      font-size: 11px;
+      color: #94a3b8;
+      margin: 0;
+    }
+
+    .section-title-sm {
+      font-size: 11px;
+      font-weight: 700;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+      margin-top: 14px;
+    }
+
+    .mo-tag {
+      display: inline-block;
+      background: rgba(59, 130, 246, 0.08);
+      color: #93c5fd;
+      border: 1px solid rgba(59, 130, 246, 0.2);
+      font-size: 10px;
+      font-weight: 500;
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin: 2px;
+    }
+
+    .incident-card {
+      background: rgba(15, 23, 42, 0.3);
+      border-left: 3px solid #3b82f6;
+      padding: 8px 12px;
+      border-radius: 0 6px 6px 0;
+      margin-bottom: 8px;
+      font-size: 11px;
+    }
+    .incident-card .id-header {
+      font-weight: 700;
+      color: #e2e8f0;
+      margin-bottom: 2px;
+    }
+    .incident-card .meta {
+      color: #64748b;
+    }
+
+    /* FIR record card styling */
+    .fir-card {
+      background: rgba(15, 23, 42, 0.45);
+      border: 1px solid rgba(59, 130, 246, 0.18);
+      border-left: 3px solid #3b82f6;
+      padding: 10px 12px;
+      border-radius: 0 8px 8px 0;
+      margin-bottom: 10px;
+      font-size: 11px;
+    }
+    .fir-card.heinous {
+      border-left-color: #ef4444;
+      border-color: rgba(239, 68, 68, 0.28);
+      background: rgba(127, 29, 29, 0.18);
+    }
+    .fir-card .fir-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .fir-card .fir-num {
+      font-weight: 700;
+      color: #e2e8f0;
+      font-size: 12px;
+    }
+    .fir-card .fir-gravity {
+      font-size: 9px;
+      font-weight: 800;
+      padding: 2px 7px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    .fir-card .fir-gravity.heinous {
+      background: rgba(239, 68, 68, 0.18);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.4);
+    }
+    .fir-card .fir-gravity.nonheinous {
+      background: rgba(16, 185, 129, 0.12);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+    .fir-card .fir-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 2px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .fir-card .fir-row:last-child { border-bottom: none; }
+    .fir-card .fir-row .k { color: #64748b; }
+    .fir-card .fir-row .v { color: #cbd5e1; font-weight: 500; text-align: right; }
+    .fir-card .fir-acts {
+      margin-top: 6px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+    .fir-card .fir-act {
+      background: rgba(139, 92, 246, 0.12);
+      border: 1px solid rgba(139, 92, 246, 0.28);
+      color: #c4b5fd;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 600;
+    }
+    .fir-summary-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .fir-summary-cell {
+      background: rgba(15, 23, 42, 0.5);
+      border: 1px solid rgba(59, 130, 246, 0.12);
+      border-radius: 8px;
+      padding: 8px 10px;
+    }
+    .fir-summary-cell .num {
+      font-size: 18px;
+      font-weight: 800;
+      color: #60a5fa;
+      line-height: 1;
+    }
+    .fir-summary-cell .num.danger { color: #f87171; }
+    .fir-summary-cell .lbl {
+      font-size: 9px;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      margin-top: 3px;
+    }
+
+    .summary-box {
+      background: rgba(30, 58, 138, 0.15);
+      border: 1px solid rgba(59, 130, 246, 0.2);
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 11px;
+      line-height: 1.4;
+      color: #bfdbfe;
+    }
+    
+    #data-src {
+      position: absolute;
+      bottom: 16px;
+      left: 16px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(59, 130, 246, 0.2);
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 11px;
+      color: #10b981;
+      pointer-events: none;
+      z-index: 10;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Left Sidebar Navigation -->
+  <div class="sidebar-nav">
+    <div class="sidebar-brand">
+      <div class="brand-title">🚨 KSP Intelligence</div>
+      <div class="brand-subtitle">Crime Intelligence Unit</div>
+    </div>
+    <div class="sidebar-menu">
+      <a href="index.html" class="menu-link">🗺 Strategic Command</a>
+      <a href="category.html" class="menu-link">📊 Category Breakdown</a>
+      <a href="trends.html" class="menu-link">📈 Historical Trends</a>
+      <a href="network.html" class="menu-link active">🕸 Link Analysis</a>
+      <a href="anomalies.html" class="menu-link">🚨 Anomaly Alerts</a>
+      <a href="risk.html" class="menu-link">🔮 Predictive Risk</a>
+      <a href="diagnostic.html" class="menu-link">⚙ Diagnostics</a>
+    </div>
+    <div class="sidebar-footer">
+      <button class="dispatch-btn" onclick="alert('Dispatch units alerted.')">🚨 Emergency Dispatch</button>
+      <div class="status-indicator">
+        <div class="status-dot"></div>
+        <span>System Status: Active</span>
+      </div>
+      <a href="#" class="help-link">Intelligence Help Desk</a>
+    </div>
+  </div>
+
+  <!-- Main Content Wrapper -->
+  <div class="main-content">
+    <!-- Top Header Panel -->
+    <header class="top-header">
+      <div class="header-left">
+        <h1>Strategic Intelligence Hub</h1>
+      </div>
+      <div class="search-box">
+        <input type="text" placeholder="Search Intelligence Database...">
+      </div>
+      <div class="header-right">
+        <span class="icon-action">🔔</span>
+        <span class="icon-action">⚙</span>
+        <div class="user-profile">
+          👤 <div><b>SP - Bengaluru</b><br><span>Session: KSP-8821</span></div>
+        </div>
+        <button onclick="handleLogout()" class="logout-icon-btn" title="Secure Logout">🚪 Logout</button>
+      </div>
+    </header>
+
+  <div id="container">
+    <div id="network"></div>
+    <div id="data-src">Connecting to server...</div>
+    
+    <div id="sidebar">
+      <div>
+        <h2>Relationship Mapping</h2>
+        <p class="desc">Bipartite link analysis connecting repeat offenders (suspects in red circles) to the districts where they operated (districts in blue boxes). This aids SCRB investigators in tracking crossover Modus Operandi (MO).</p>
+      </div>
+
+      <div class="filter-card" style="margin-bottom: 16px;">
+        <label>🔍 Find Suspect by Name</label>
+        <div style="display:flex; gap:6px;">
+          <input type="text" id="suspectSearch" placeholder="e.g. Ramesh Kumar" oninput="searchSuspect()" onkeydown="if(event.key==='Enter'){event.preventDefault(); loadNetwork();}" style="margin-bottom:0; flex:1;" />
+          <button onclick="loadNetwork()" style="margin:0; padding:6px 12px; white-space:nowrap;">Search</button>
+        </div>
+        <p style="font-size:10px; color:#94a3b8; margin:6px 0 0 0;">Searches statewide across all districts. Type a name + click Search, or filter the graph below.</p>
+      </div>
+
+      <div class="filter-card">
+        <label>Case Type (Crime Head)</label>
+        <select id="crimeHeadId">
+          <option value="">All Crime Types</option>
+        </select>
+        <label>District</label>
+        <select id="districtId">
+          <option value="">All Districts</option>
+        </select>
+        <label>Min Incidences</label>
+        <input type="number" id="minCases" value="2" min="1" max="10" />
+        <label>Max Accused Limit</label>
+        <input type="number" id="limit" value="15" min="10" max="300" />
+        <button onclick="loadNetwork()">Generate Graph</button>
+      </div>
+
+      <div id="info-panel"></div>
+    </div>
+  </div> <!-- Close #container -->
+  </div> <!-- Close .main-content wrapper -->
+
+  <script>
+    function handleLogout() {
+      alert("Session logged out successfully (local storage cleared).");
+      localStorage.removeItem("loggedIn");
+      localStorage.removeItem("username");
+      window.location.href = "login.html";
+    }
+
+    const isLocal = window.location.hostname === "localhost" || 
+                    window.location.hostname === "127.0.0.1" || 
+                    window.location.protocol === "file:";
+
+    const BASE = isLocal || window.location.hostname.includes(".development.")
+        ? "https://predictcrimeai-60074448608.development.catalystserverless.in"
+        : "https://predictcrimeai-60074448608.catalystserverless.in";
+    
+    const FUNCTION_URL = BASE + "/server/getNetworkData/execute";
+
+    // Built-in fallback lookup lists (used when backend is unreachable / first paint).
+    const KSP_CRIME_HEADS_FALLBACK = [
+      {"id":"1","name":"Crimes Against Body"},
+      {"id":"2","name":"Theft & Burglary"},
+      {"id":"3","name":"Crimes Against Women/Children"},
+      {"id":"4","name":"Cybercrime"},
+      {"id":"5","name":"White Collar Crime"},
+      {"id":"6","name":"Narcotics & Drugs"},
+      {"id":"7","name":"Arson & Property Damage"},
+      {"id":"8","name":"Economic Offenses"},
+      {"id":"9","name":"Other IPC Crimes"},
+      {"id":"10","name":"Special & Local Laws (SLL)"}
+    ];
+    const KSP_DISTRICTS_FALLBACK = [
+      {"id":"1","name":"Bagalkot"},{"id":"2","name":"Ballari"},{"id":"3","name":"Belagavi"},
+      {"id":"4","name":"Bengaluru Rural"},{"id":"5","name":"Bengaluru Urban"},{"id":"6","name":"Bidar"},
+      {"id":"7","name":"Chamarajanagar"},{"id":"8","name":"Chikkaballapur"},{"id":"9","name":"Chikkamagaluru"},
+      {"id":"10","name":"Chitradurga"},{"id":"11","name":"Dakshina Kannada"},{"id":"12","name":"Davanagere"},
+      {"id":"13","name":"Dharwad"},{"id":"14","name":"Gadag"},{"id":"15","name":"Hassan"},
+      {"id":"16","name":"Haveri"},{"id":"17","name":"Kalaburagi"},{"id":"18","name":"Kodagu"},
+      {"id":"19","name":"Kolar"},{"id":"20","name":"Koppal"},{"id":"21","name":"Mandya"},
+      {"id":"22","name":"Mysuru"},{"id":"23","name":"Raichur"},{"id":"24","name":"Ramanagara"},
+      {"id":"25","name":"Shivamogga"},{"id":"26","name":"Tumakuru"},{"id":"27","name":"Udupi"},
+      {"id":"28","name":"Uttara Kannada"},{"id":"29","name":"Vijayapura"},{"id":"30","name":" Yadgir"}
+    ];
+
+    // On page load: populate dropdowns with fallback lists immediately, then
+    // fetch the first graph (which refreshes dropdowns from the live backend).
+    (function initFilters() {
+      populateLookups(null, null);
+      loadNetwork();
+    })();
+
+    // DATA SOURCE POLICY: All intelligence data must originate from the
+    // Catalyst Datastore via the backend function. No synthetic fallback is shown.
+    // On connectivity failure, a clear error message with retry is displayed.
+
+    let networkInstance = null;
+    let currentNodes = [];
+
+    function searchSuspect() {
+      if (!networkInstance || !currentNodes) return;
+      const query = document.getElementById("suspectSearch").value.trim().toLowerCase();
+      if (!query) return;
+
+      const match = currentNodes.find(n => n.nodeType === "suspect" && n.label.toLowerCase().includes(query));
+      if (match) {
+        networkInstance.focus(match.id, {
+          scale: 1.3,
+          animation: { duration: 800, easingFunction: "easeInOutQuad" }
+        });
+        networkInstance.selectNodes([match.id]);
+        displayNodeDetails(match.id);
+      }
+    }
+
+    // Populate the District and Case Type dropdowns from backend lookup lists.
+    // Falls back to a built-in KSP list if the backend is unreachable.
+    function populateLookups(districts, crimeHeads) {
+      const distSel = document.getElementById('districtId');
+      const headSel = document.getElementById('crimeHeadId');
+      const curDist = distSel.value;
+      const curHead = headSel.value;
+
+      distSel.innerHTML = '<option value="">All Districts</option>';
+      (districts && districts.length ? districts : KSP_DISTRICTS_FALLBACK).forEach(d => {
+        const opt = document.createElement('option');
+        opt.value = d.id; opt.textContent = d.name;
+        distSel.appendChild(opt);
+      });
+      if (curDist) distSel.value = curDist;
+
+      headSel.innerHTML = '<option value="">All Crime Types</option>';
+      (crimeHeads && crimeHeads.length ? crimeHeads : KSP_CRIME_HEADS_FALLBACK).forEach(h => {
+        const opt = document.createElement('option');
+        opt.value = h.id; opt.textContent = h.name;
+        headSel.appendChild(opt);
+      });
+      if (curHead) headSel.value = curHead;
+    }
+
+    function loadNetwork() {
+      const minCases = document.getElementById('minCases').value || 2;
+      const limit = document.getElementById('limit').value || 150;
+      const districtId = document.getElementById('districtId').value.trim();
+      const crimeHeadId = document.getElementById('crimeHeadId').value.trim();
+      const searchName = document.getElementById('suspectSearch').value.trim();
+
+      let url = `${FUNCTION_URL}?min_cases=${minCases}&limit=${limit}&_t=${Date.now()}`;
+      if (districtId) url += `&district_id=${encodeURIComponent(districtId)}`;
+      if (crimeHeadId) url += `&crime_head_id=${encodeURIComponent(crimeHeadId)}`;
+      if (searchName) url += `&search_name=${encodeURIComponent(searchName)}`;
+
+      document.getElementById('data-src').textContent = "\u231b Querying datastore...";
+      document.getElementById('data-src').style.color = "#fbbf24";
+      document.getElementById('data-src').style.borderColor = "rgba(251, 191, 36, 0.3)";
+
+      fetch(url)
+        .then(response => response.json())
+        .then(raw => {
+          // ---- Detect the Catalyst failure envelope ----
+          // When a serverless function times out or errors at the platform
+          // level, Catalyst returns {"status":"failure","data":{"message":...}}
+          // with NO "output" field.  JSON.parse(undefined) would throw and
+          // silently drop us into the demo-data fallback.  Detect it here
+          // and surface a clear message to the investigator instead.
+          if (raw && raw.status === "failure") {
+            const platformMsg = (raw.data && (raw.data.message || raw.data.error_code)) || "Unknown platform error";
+            showBackendError(
+              "The analysis service could not complete the request.",
+              "Catalyst platform error: " + platformMsg +
+              (platformMsg.includes("EXECUTION_TIME_EXCEEDED")
+                ? " \u2014 The query is taking too long. Try increasing Min Incidences or lowering the Max Accused Limit to reduce the data volume."
+                : " \u2014 Please try again, or redeploy the getNetworkData function if this persists.")
+            );
+            return;
+          }
+
+          // ---- Normal success envelope: parse the function output ----
+          let parsed;
+          try {
+            parsed = JSON.parse(raw.output);
+          } catch (parseErr) {
+            showBackendError(
+              "Received an unexpected response from the server.",
+              "Could not parse server output: " + parseErr.message
+            );
+            return;
+          }
+
+          // ---- Function-level error (e.g. ZCQL syntax error) ----
+          if (!parsed.success) {
+            showBackendError(
+              "The analysis service returned an error.",
+              "Server error: " + (parsed.error || "Unknown error") +
+              " \u2014 If this is a query error, please redeploy the getNetworkData function with the latest code."
+            );
+            return;
+          }
+
+          // ---- Success: populate dropdowns from live lookups ----
+          if (parsed.districts || parsed.crime_heads) {
+            populateLookups(parsed.districts, parsed.crime_heads);
+          }
+
+          document.getElementById('data-src').textContent = isLocal
+            ? "\u2705 Live Data (Cloud Dev Environment)"
+            : "\u2705 Live Data from Datastore";
+          document.getElementById('data-src').style.color = "#10b981";
+          document.getElementById('data-src').style.borderColor = "rgba(16, 185, 129, 0.3)";
+
+          if (parsed.message) {
+            const ip = document.getElementById('info-panel');
+            if (ip) ip.innerHTML = `<div style="padding:14px;border:1px solid rgba(251,191,36,.3);border-radius:8px;color:#fbbf24;font-size:13px;">${parsed.message}</div>`;
+          }
+
+          if (!parsed.nodes || parsed.nodes.length === 0) {
+            renderGraph([], []);
+            const ip = document.getElementById('info-panel');
+            if (ip && !parsed.message) ip.innerHTML = `<div style="padding:14px;border:1px solid rgba(148,163,184,.3);border-radius:8px;color:#94a3b8;font-size:13px;">No network data matched the current filters. Try lowering Min Incidences or clearing the filters.</div>`;
+            return;
+          }
+
+          renderGraph(parsed.nodes, parsed.edges);
+        })
+        .catch(err => {
+          console.warn("Network analysis load failed, loading local fallback network:", err.message);
+          showDemoFallback("Network request failed: " + err.message);
+        });
+    }
+
+    // ---- Helper: show a clear backend-error message ----
+    function showBackendError(title, detail) {
+      document.getElementById('data-src').textContent = "\u26a0\ufe0f Datastore error \u2014 no data available";
+      document.getElementById('data-src').style.color = "#ef4444";
+      document.getElementById('data-src').style.borderColor = "rgba(239, 68, 68, 0.3)";
+      renderGraph([], []);
+      const ip = document.getElementById('info-panel');
+      if (ip) {
+        ip.style.display = "block";
+        ip.innerHTML =
+          '<div style="padding:20px;border:1px solid rgba(239,68,68,.35);border-radius:10px;color:#fca5a5;font-size:13px;line-height:1.5;">' +
+          '<strong style="display:block;margin-bottom:8px;color:#f87171;font-size:15px;">\u26a0\ufe0f ' + title + '</strong>' +
+          '<span>' + detail + '</span>' +
+          '<hr style="border:none;border-top:1px solid rgba(239,68,68,.2);margin:12px 0;">' +
+          '<div style="display:flex;gap:8px;flex-wrap:wrap;">' +
+          '<button onclick="loadNetwork()" style="background:#ef4444;border:none;color:#fff;padding:8px 16px;border-radius:6px;cursor:pointer;font-weight:600;font-size:12px">\ud83d\udd04 Retry Connection</button>' +
+          '<a href="diagnostic.html" style="color:#94a3b8;font-size:12px;padding:8px 0">Go to Diagnostics \u2192</a>' +
+          '</div>' +
+          '</div>';
+      }
+      populateLookups(null, null);
+    }
+
+    // ---- Helper: show the datastore-error banner ----
+    function showDemoFallback(reason) {
+      console.error("Datastore unavailable:", reason);
+      document.getElementById('data-src').textContent = "\u26a0\ufe0f Datastore error \u2014 no data available";
+      document.getElementById('data-src').style.color = "#ef4444";
+      document.getElementById('data-src').style.borderColor = "rgba(239, 68, 68, 0.3)";
+      renderGraph([], []);
+      const ip = document.getElementById('info-panel');
+      if (ip) {
+        ip.style.display = "block";
+        ip.innerHTML =
+          '<div style="padding:20px;border:1px solid rgba(239,68,68,.35);border-radius:10px;color:#fca5a5;font-size:13px;line-height:1.5;">' +
+          '<strong style="display:block;margin-bottom:8px;color:#f87171;font-size:15px;">\u26a0\ufe0f Datastore Unavailable</strong>' +
+          '<span>' + reason + '</span>' +
+          '<hr style="border:none;border-top:1px solid rgba(239,68,68,.2);margin:12px 0;">' +
+          '<div style="display:flex;gap:8px;flex-wrap:wrap;">' +
+          '<button onclick="loadNetwork()" style="background:#ef4444;border:none;color:#fff;padding:8px 16px;border-radius:6px;cursor:pointer;font-weight:600;font-size:12px">\ud83d\udd04 Retry Connection</button>' +
+          '<a href="diagnostic.html" style="color:#94a3b8;font-size:12px;padding:8px 0">Go to Diagnostics \u2192</a>' +
+          '</div>' +
+          '</div>';
+      }
+      populateLookups(null, null);
+    }
+
+    function renderGraph(nodes, edges) {
+      const visNodes = nodes.map(n => ({
+        id: n.id,
+        label: n.label,
+        shape: n.type === "suspect" ? "dot" : (n.type === "victim" ? "triangle" : "box"),
+        size: n.type === "suspect" ? 18 : (n.type === "victim" ? 10 : 22),
+        color: {
+          background: n.type === "suspect" ? "#ef4444" : (n.type === "victim" ? "#f59e0b" : "#1e40af"),
+          border: n.type === "suspect" ? "#b91c1c" : (n.type === "victim" ? "#d97706" : "#3b82f6"),
+          highlight: {
+            background: n.type === "suspect" ? "#f87171" : (n.type === "victim" ? "#fbbf24" : "#3b82f6"),
+            border: n.type === "suspect" ? "#ef4444" : (n.type === "victim" ? "#f59e0b" : "#60a5fa")
+          }
+        },
+        font: { color: "#f1f5f9", face: "Inter", size: n.type === "victim" ? 9 : 12 },
+        // Original fields
+        mo: n.mo || [],
+        nodeType: n.type,
+        // FIR / offender detail passthrough — the fix for the "error" where
+        // real backend suspects were silently dropping their history & profile
+        // and falling back to hardcoded demo data.
+        history: n.history || null,
+        act_profile: n.act_profile || null,
+        alias: n.alias || null,
+        uid: n.uid || null,
+        summary: n.summary || null,
+        row_ids: n.row_ids || null,
+        case_count: n.case_count != null ? n.case_count : null,
+        matched: n.matched || false,
+        fir_details: n.fir_details || null,
+        // Intelligence-layer enrichment (additive passthrough)
+        suspect_risk_score: n.suspect_risk_score,
+        risk_level: n.risk_level,
+        cross_district: n.cross_district,
+        operating_districts: n.operating_districts,
+        association_count: n.association_count,
+        mo_diversity: n.mo_diversity
+      }));
+
+      const visEdges = edges.map(e => {
+        const strength = e.association_strength != null ? Number(e.association_strength) : (e.shared_cases || 1);
+        const isHidden = e.edge_type === "hidden_association" || e.via === "shared_co_accused";
+        return {
+          from: e.from,
+          to: e.to,
+          color: { color: isHidden ? "#8b5cf6" : "#475569", highlight: "#3b82f6", opacity: isHidden ? 0.75 : 0.6 },
+          width: 1 + Math.min(strength, 6),
+          dashes: isHidden,
+          title: isHidden
+            ? `Hidden association (shared co-accused) — strength ${strength}`
+            : (e.association_strength != null ? `Association strength: ${strength} shared case(s)` : "co-accused link"),
+          _strength: strength,
+          _hidden: isHidden
+        };
+      });
+
+      const container = document.getElementById('network');
+      const data = {
+        nodes: new vis.DataSet(visNodes),
+        edges: new vis.DataSet(visEdges)
+      };
+
+      const options = {
+        nodes: { borderWidth: 2 },
+        physics: {
+          forceAtlas2Based: {
+            gravitationalConstant: -35,
+            springLength: 90,
+            springConstant: 0.04
+          },
+          solver: "forceAtlas2Based",
+          stabilization: { iterations: 120 }
+        },
+        interaction: { hover: true, tooltipDelay: 200 }
+      };
+
+      if (networkInstance) networkInstance.destroy();
+      networkInstance = new vis.Network(container, data, options);
+
+      currentNodes = visNodes;
+
+      networkInstance.on("click", function (params) {
+        if (params.nodes.length > 0) {
+          displayNodeDetails(params.nodes[0]);
+        } else {
+          displayNodeDetails(null);
+        }
+      });
+    }
+
+    // No hardcoded suspect profiles — all data must come from the Catalyst Datastore.
+
+    function displayNodeDetails(clickedNodeId) {
+      const panel = document.getElementById('info-panel');
+      if (!clickedNodeId) {
+        panel.style.display = "none";
+        return;
+      }
+      const node = currentNodes.find(n => n.id === clickedNodeId);
+      if (!node) return;
+
+      if (node.nodeType === "suspect") {
+        // All data must come from the Catalyst Datastore via the backend function.
+        // No hardcoded profiles are used.
+        const hasRealHistory = Array.isArray(node.history) && node.history.length > 0;
+        const alias = node.alias || '—';
+        const uid = node.uid || '—';
+        const history = hasRealHistory ? node.history : [];
+        const summary = node.summary || `Suspect profile loaded from Datastore. Click a node connected to this suspect to see case details.`;
+
+        const tags = node.mo.length > 0 
+          ? node.mo.map(mo => `<span class="mo-tag">${mo}</span>`).join('') 
+          : '<span class="mo-tag">No specified MO</span>';
+
+        // Intelligence metrics — additive consumption of enriched backend fields.
+        const riskScore = node.suspect_risk_score != null ? Number(node.suspect_risk_score) : null;
+        const riskLvl = node.risk_level || (riskScore != null ? (riskScore >= 75 ? 'CRITICAL' : riskScore >= 50 ? 'HIGH' : riskScore >= 25 ? 'MODERATE' : 'LOW') : null);
+        const riskCol = { 'CRITICAL':'#ef4444','HIGH':'#f97316','MODERATE':'#eab308','LOW':'#10b981' }[String(riskLvl||'').toUpperCase()] || '#64748b';
+        const intelRows = [];
+        if (riskScore != null) intelRows.push(['Suspect Risk Score', `<b style="color:${riskCol}">${riskScore.toFixed(0)}/100</b>`]);
+        if (riskLvl) intelRows.push(['Risk Level', `<b style="color:${riskCol}">${String(riskLvl).toUpperCase()}</b>`]);
+        if (node.case_count != null) intelRows.push(['Total Cases / FIRs', `<b>${node.case_count}</b>`]);
+        if (node.association_count != null) intelRows.push(['Associations', `<b>${node.association_count}</b>`]);
+        if (node.mo_diversity != null) intelRows.push(['MO Diversity', `<b>${node.mo_diversity}</b> distinct type(s)`]);
+        if (node.cross_district === true) intelRows.push(['Cross-Jurisdiction', `<b style="color:#f87171">YES — multi-district operator</b>`]);
+        if (node.operating_districts && node.operating_districts.length) intelRows.push(['Operating Districts', `<b>${Array.isArray(node.operating_districts) ? node.operating_districts.join(', ') : node.operating_districts}</b>`]);
+        const intelHtml = intelRows.length ? `
+          <div class="section-title-sm">Intelligence Metrics</div>
+          <div style="margin-bottom:12px; background:rgba(15,23,42,0.6); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:10px 12px; font-size:12px;">
+            ${intelRows.map(([k,v]) => `<div style="display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px solid rgba(255,255,255,0.04)"><span style="color:#94a3b8">${k}</span><span>${v}</span></div>`).join('')}
+          </div>` : '';
+
+        // ---- FIR summary block (from node.fir_details) ----
+        let firSummaryHtml = '';
+        const fd = node.fir_details;
+        if (fd) {
+          const rangeTxt = (fd.fir_date_range && (fd.fir_date_range.first || fd.fir_date_range.last))
+            ? `${fd.fir_date_range.first || '—'} → ${fd.fir_date_range.last || '—'}`
+            : '—';
+          firSummaryHtml = `
+            <div class="section-title-sm">FIR Records Summary</div>
+            <div class="fir-summary-grid">
+              <div class="fir-summary-cell"><div class="num">${fd.total_firs || 0}</div><div class="lbl">Total FIRs</div></div>
+              <div class="fir-summary-cell"><div class="num danger">${fd.heinous_firs || 0}</div><div class="lbl">Heinous FIRs</div></div>
+              <div class="fir-summary-cell"><div class="num">${fd.police_station_count || 0}</div><div class="lbl">Stations Involved</div></div>
+              <div class="fir-summary-cell"><div class="num">${(fd.fir_districts || []).length}</div><div class="lbl">FIR Districts</div></div>
+            </div>
+            <div style="font-size:10px; color:#94a3b8; margin-bottom:10px; line-height:1.5;">
+              <b style="color:#cbd5e1;">FIR date range:</b> ${rangeTxt}<br>
+              <b style="color:#cbd5e1;">Districts:</b> ${(fd.fir_districts || []).join(', ') || '—'}<br>
+              <b style="color:#cbd5e1;">Police stations:</b> ${(fd.police_stations_involved || []).join(', ') || '—'}
+            </div>`;
+        }
+
+        // ---- Incident history / FIR records ----
+        // If history entries carry FIR fields (fir_number etc.), render rich
+        // FIR cards; otherwise render the simple incident cards.
+        const hasFirFields = history.some(h => h.fir_number || h.fir_date || h.police_station || h.acts);
+        let historyHtml;
+        if (hasFirFields) {
+          historyHtml = history.map(h => {
+            const gravity = h.gravity || '';
+            const gravClass = gravity === 'Heinous' ? 'heinous' : 'nonheinous';
+            const acts = Array.isArray(h.acts) ? h.acts : [];
+            const actsHtml = acts.length
+              ? `<div class="fir-acts">${acts.map(a => `<span class="fir-act">${a}</span>`).join('')}</div>`
+              : '<div style="font-size:10px;color:#64748b;margin-top:4px;">No act/section data</div>';
+            return `
+              <div class="fir-card ${gravity === 'Heinous' ? 'heinous' : ''}">
+                <div class="fir-head">
+                  <span class="fir-num">FIR No. ${h.fir_number || h.id || '—'}</span>
+                  ${gravity ? `<span class="fir-gravity ${gravClass}">${gravity}</span>` : ''}
+                </div>
+                <div class="fir-row"><span class="k">Crime Head</span><span class="v">${h.crime_head || h.type || '—'}</span></div>
+                <div class="fir-row"><span class="k">FIR Date</span><span class="v">${h.fir_date || h.date || '—'}</span></div>
+                <div class="fir-row"><span class="k">Police Station</span><span class="v">${h.police_station || h.loc || '—'}</span></div>
+                <div class="fir-row"><span class="k">District</span><span class="v">${h.district || '—'}</span></div>
+                <div style="font-size:10px;color:#64748b;margin-top:6px;">Charged Acts / Sections</div>
+                ${actsHtml}
+              </div>`;
+          }).join('');
+        } else {
+          historyHtml = history.map(h => `
+            <div class="incident-card">
+              <div class="id-header">${h.id}: ${h.type}</div>
+              <div class="meta">${h.date} | ${h.loc}</div>
+            </div>
+          `).join('');
+        }
+
+        const historyTitle = hasFirFields ? 'FIR Records' : 'Incident History';
+
+        panel.innerHTML = `
+          <div class="profile-header">
+            <h3>Offender Profile</h3>
+            <span class="profile-badge">Repeat Offender</span>
+          </div>
+          <div class="offender-card">
+            <div class="offender-avatar">👤</div>
+            <div class="offender-details">
+              <h4>${node.label}</h4>
+              <p>Alias: <b>${alias}</b></p>
+              <p>UID: <b>${uid}</b></p>
+            </div>
+          </div>
+          ${intelHtml}
+          ${firSummaryHtml}
+          <div class="section-title-sm">Modus Operandi (MO)</div>
+          <div style="margin-bottom: 12px; display: flex; flex-wrap: wrap;">${tags}</div>
+          
+          ${node.act_profile && node.act_profile.length ? `<div class="section-title-sm">Legal Act Profile</div>
+            <div style="margin-bottom:12px; display:flex; flex-wrap:wrap; gap:6px;">
+              ${node.act_profile.map(a => `<div title="${a.count} charge(s) · ${a.share_percent}% share" style="background:rgba(139,92,246,0.12); border:1px solid rgba(139,92,246,0.3); color:#c4b5fd; padding:5px 10px; border-radius:8px; font-size:11px; font-weight:600">${a.act} <span style="color:#a78bfa; font-weight:400">· ${a.count}</span></div>`).join("")}
+            </div>` : ""}
+          
+          <div class="section-title-sm">${historyTitle}</div>
+          <div style="margin-bottom: 12px;">${historyHtml}</div>
+          
+          <div class="section-title-sm">Analytical Summary</div>
+          <div class="summary-box">${summary}</div>
+        `;
+      } else if (node.nodeType === "victim") {
+        panel.innerHTML = `
+          <div class="profile-header">
+            <h3>Case Victim</h3>
+          </div>
+          <p style="font-weight: 600; font-size: 14px; color: #fff;">${node.label}</p>
+          <p style="font-size: 12px; color: #94a3b8; margin-top: 6px;">Victim node linked to a registered FIR. Connected to the accused suspect(s) charged in that case.</p>
+        `;
+      } else {
+        panel.innerHTML = `
+          <div class="profile-header">
+            <h3>District Jurisdiction</h3>
+          </div>
+          <p style="font-weight: 600; font-size: 15px; color: #fff;">${node.label}</p>
+          <p style="font-size: 12px; color: #94a3b8; margin-top: 6px;">Jurisdictional node linking local police station counts under this district boundary.</p>
+        `;
+      }
+      panel.style.display = "block";
+    }
+
+    // Auto-load on open
+    window.onload = loadNetwork;
+  </script>
+</body>
+</html>

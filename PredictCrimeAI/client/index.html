@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>CrimePredictAI — District Hotspot Map</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      margin: 0;
+      padding: 0;
+      background: #0b0f19;
+      color: #f1f5f9;
+      font-family: 'Inter', sans-serif;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Left Sidebar Navigation */
+    .sidebar-nav {
+      width: 260px;
+      height: 100vh;
+      background: #0f172a;
+      border-right: 1px solid rgba(59, 130, 246, 0.15);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      z-index: 100;
+    }
+    .sidebar-brand {
+      padding: 24px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .brand-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .brand-subtitle {
+      font-size: 10px;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 4px;
+    }
+    .sidebar-menu {
+      flex: 1;
+      padding: 20px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      overflow-y: auto;
+    }
+    .menu-link {
+      text-decoration: none;
+      color: #94a3b8;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 10px 16px;
+      border-radius: 8px;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .menu-link:hover {
+      color: #3b82f6;
+      background: rgba(59, 130, 246, 0.06);
+    }
+    .menu-link.active {
+      color: #fff;
+      background: linear-gradient(135deg, #1d4ed8, #3b82f6);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+    }
+    .sidebar-footer {
+      padding: 20px;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .dispatch-btn {
+      width: 100%;
+      background: #7f1d1d;
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      padding: 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.3s;
+    }
+    .dispatch-btn:hover {
+      background: #ef4444;
+      color: #fff;
+      box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+    }
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: #10b981;
+    }
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #10b981;
+      animation: pulse-dot 1.5s infinite;
+    }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    .help-link {
+      font-size: 11px;
+      color: #64748b;
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .help-link:hover {
+      color: #94a3b8;
+    }
+
+    /* Main Content Wrapper */
+    .main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Top Header Panel */
+    .top-header {
+      height: 70px;
+      background: #0f172a;
+      border-bottom: 1px solid rgba(59, 130, 246, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      flex-shrink: 0;
+    }
+    .header-left h1 {
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+      margin: 0;
+      letter-spacing: 0.5px;
+    }
+    .search-box {
+      width: 320px;
+      position: relative;
+    }
+    .search-box input {
+      width: 100%;
+      background: #0b0f19;
+      border: 1px solid rgba(59, 130, 246, 0.2);
+      border-radius: 8px;
+      padding: 8px 16px;
+      color: #fff;
+      font-size: 12px;
+      outline: none;
+      transition: border-color 0.3s;
+    }
+    .search-box input:focus {
+      border-color: #3b82f6;
+    }
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .icon-action {
+      color: #94a3b8;
+      cursor: pointer;
+      font-size: 16px;
+      transition: color 0.2s;
+    }
+    .icon-action:hover {
+      color: #fff;
+    }
+    .user-profile {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(30, 41, 59, 0.5);
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(59, 130, 246, 0.1);
+      font-size: 11px;
+    }
+    .user-profile b {
+      color: #fff;
+    }
+    .user-profile span {
+      color: #64748b;
+      font-size: 10px;
+    }
+    .logout-icon-btn {
+      background: none;
+      border: none;
+      color: #f87171;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      padding: 6px 12px;
+      border-radius: 6px;
+      transition: all 0.3s;
+      border: 1px solid rgba(248, 113, 113, 0.2);
+      background: rgba(248, 113, 113, 0.05);
+    }
+    .logout-icon-btn:hover {
+      background: rgba(239, 68, 68, 0.8);
+      color: #fff;
+      border-color: #ef4444;
+    }
+
+
+    #alert-bar {
+      background: linear-gradient(90deg, #7b0000, #d7263d, #7b0000);
+      background-size: 200%;
+      animation: scroll 2.5s linear infinite;
+      color: #fff;
+      font-size: 12px;
+      padding: 6px 24px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      z-index: 99;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+    @keyframes scroll { 0%{background-position:0%} 50%{background-position:100%} 100%{background-position:0%} }
+    .adot { width: 8px; height: 8px; border-radius: 50%; background: #fff; animation: blink 1s infinite; flex-shrink: 0; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+    #container {
+      display: flex;
+      flex: 1;
+      min-height: 0;
+      position: relative;
+    }
+    
+    #sidebar {
+      width: 320px;
+      background: #0f172a;
+      padding: 20px;
+      overflow-y: auto;
+      border-right: 1px solid rgba(59, 130, 246, 0.15);
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    
+    #map-wrapper {
+      flex: 1;
+      height: 100%;
+      position: relative;
+    }
+    #map {
+      width: 100%;
+      height: 100%;
+      background: #0f172a;
+    }
+
+    .stat-card {
+      background: rgba(30, 41, 59, 0.5);
+      border: 1px solid rgba(59, 130, 246, 0.1);
+      border-radius: 10px;
+      padding: 12px 16px;
+      border-left: 4px solid #3b82f6;
+    }
+    .stat-card h3 {
+      margin: 0 0 4px;
+      font-size: 10px;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .stat-card .value {
+      font-size: 22px;
+      font-weight: bold;
+      color: #60a5fa;
+    }
+
+    .section-title {
+      color: #60a5fa;
+      margin: 10px 0 4px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    #districtList {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .district-item {
+      padding: 10px 14px;
+      background: rgba(15, 23, 42, 0.6);
+      border-radius: 8px;
+      cursor: pointer;
+      border: 1px solid rgba(59, 130, 246, 0.1);
+      transition: all 0.2s ease;
+    }
+    .district-item:hover {
+      background: rgba(30, 41, 59, 0.8);
+      border-color: #3b82f6;
+      transform: translateX(2px);
+    }
+    .district-item .rank {
+      font-size: 10px;
+      color: #64748b;
+      margin-bottom: 2px;
+    }
+    .district-item .name {
+      font-weight: 600;
+      color: #e2e8f0;
+      font-size: 13px;
+    }
+    .district-item .count {
+      float: right;
+      color: #f87171;
+      font-weight: bold;
+      font-size: 13px;
+    }
+    .district-item .meta {
+      clear: both;
+      margin-top: 4px;
+      font-size: 11px;
+      color: #64748b;
+    }
+
+    .leaflet-popup-content-wrapper {
+      background: #0f172a;
+      border: 1px solid rgba(59, 130, 246, 0.2);
+      border-radius: 10px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+    .leaflet-popup-content {
+      color: #e2e8f0;
+      margin: 12px 16px;
+      font-family: 'Inter', sans-serif;
+    }
+    .leaflet-popup-tip {
+      background: #0f172a;
+    }
+
+    #data-src {
+      position: fixed;
+      bottom: 12px;
+      left: 12px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(59, 130, 246, 0.2);
+      border-radius: 6px;
+      padding: 5px 11px;
+      font-size: 11px;
+      color: #94a3b8;
+      z-index: 9999;
+      pointer-events: none;
+    }
+    /* Floating Map Controls & Pulse Icons */
+    .map-controls {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      z-index: 1000;
+      display: flex;
+      gap: 6px;
+      background: rgba(15, 23, 42, 0.9);
+      padding: 6px;
+      border-radius: 8px;
+      border: 1px solid rgba(59, 130, 246, 0.25);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(8px);
+    }
+    .control-btn {
+      padding: 6px 12px;
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 6px;
+      color: #94a3b8;
+      font-family: 'Inter', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .control-btn:hover {
+      background: rgba(59, 130, 246, 0.2);
+      color: #e2e8f0;
+    }
+    .control-btn.active {
+      background: #3b82f6;
+      color: #ffffff;
+      border-color: #2563eb;
+      box-shadow: 0 0 10px rgba(59, 130, 246, 0.4);
+    }
+    .back-btn {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      z-index: 1000;
+      padding: 8px 14px;
+      background: #1e293b;
+      border: 1px solid #3b82f6;
+      border-radius: 6px;
+      color: #e2e8f0;
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: none;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+      transition: all 0.2s ease;
+    }
+    .back-btn:hover {
+      background: #3b82f6;
+      color: #ffffff;
+    }
+
+    @keyframes pulse {
+      0% {
+        transform: scale(0.6);
+        opacity: 1;
+      }
+      100% {
+        transform: scale(2.2);
+        opacity: 0;
+      }
+    }
+    .pulse-icon {
+      width: 20px;
+      height: 20px;
+      background: rgba(239, 68, 68, 0.4);
+      border: 2px solid #ef4444;
+      border-radius: 50%;
+      position: relative;
+    }
+    .pulse-icon::after {
+      content: '';
+      width: 100%;
+      height: 100%;
+      background: rgba(239, 68, 68, 0.6);
+      border-radius: 50%;
+      position: absolute;
+      top: 0;
+      left: 0;
+      animation: pulse 1.6s infinite ease-out;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Left Sidebar Navigation -->
+  <div class="sidebar-nav">
+    <div class="sidebar-brand">
+      <div class="brand-title">🚨 KSP Intelligence</div>
+      <div class="brand-subtitle">Crime Intelligence Unit</div>
+    </div>
+    <div class="sidebar-menu">
+      <a href="index.html" class="menu-link active">🗺 Strategic Command</a>
+      <a href="category.html" class="menu-link">📊 Category Breakdown</a>
+      <a href="trends.html" class="menu-link">📈 Historical Trends</a>
+      <a href="network.html" class="menu-link">🕸 Link Analysis</a>
+      <a href="anomalies.html" class="menu-link">🚨 Anomaly Alerts</a>
+      <a href="risk.html" class="menu-link">🔮 Predictive Risk</a>
+      <a href="diagnostic.html" class="menu-link">⚙ Diagnostics</a>
+    </div>
+    <div class="sidebar-footer">
+      <button class="dispatch-btn" onclick="alert('Dispatch units alerted.')">🚨 Emergency Dispatch</button>
+      <div class="status-indicator">
+        <div class="status-dot"></div>
+        <span>System Status: Active</span>
+      </div>
+      <a href="#" class="help-link">Intelligence Help Desk</a>
+    </div>
+  </div>
+
+  <!-- Main Content Wrapper -->
+  <div class="main-content">
+    <!-- Top Header Panel -->
+    <header class="top-header">
+      <div class="header-left">
+        <h1>Strategic Intelligence Hub</h1>
+      </div>
+      <div class="search-box">
+        <input type="text" placeholder="Search Intelligence Database...">
+      </div>
+      <div class="header-right">
+        <span class="icon-action">🔔</span>
+        <span class="icon-action">⚙</span>
+        <div class="user-profile">
+          👤 <div><b>SP - Bengaluru</b><br><span>Session: KSP-8821</span></div>
+        </div>
+        <button onclick="handleLogout()" class="logout-icon-btn" title="Secure Logout">🚪 Logout</button>
+      </div>
+    </header>
+
+  <div id="alert-bar">
+    <div class="adot"></div>
+    <strong>⚠ Top crime districts:</strong>
+    <span id="alert-text">Loading…</span>
+  </div>
+
+  <div id="container">
+    <div id="sidebar">
+      <div class="stat-card">
+        <h3>Districts Monitored</h3>
+        <div class="value">31</div>
+      </div>
+      <div class="stat-card">
+        <h3>Total Cases</h3>
+        <div class="value" id="totalCases">—</div>
+      </div>
+      <div class="stat-card">
+        <h3>Top District</h3>
+        <div class="value" id="topDistrict" style="font-size:16px">—</div>
+      </div>
+      
+      <div class="section-title">District Rankings</div>
+      <div id="districtList"></div>
+    </div>
+    <div id="map-wrapper">
+      <div id="map"></div>
+      <!-- Back Button -->
+      <button id="map-back-btn" class="back-btn" onclick="drillUp()">⬅ Back to Districts View</button>
+      <!-- Time Shift controls -->
+      <div class="map-controls">
+        <button class="control-btn active" id="btn-shift-all" onclick="setShift('all')">🕒 All Hours</button>
+        <button class="control-btn" id="btn-shift-morning" onclick="setShift('morning')">🌅 Morning</button>
+        <button class="control-btn" id="btn-shift-afternoon" onclick="setShift('afternoon')">☀️ Afternoon</button>
+        <button class="control-btn" id="btn-shift-evening" onclick="setShift('evening')">🌇 Evening</button>
+        <button class="control-btn" id="btn-shift-night" onclick="setShift('night')">🌃 Night</button>
+      </div>
+    </div>
+  </div> <!-- Close #container -->
+  </div> <!-- Close .main-content wrapper -->
+
+  <div id="data-src">⏳ Connecting to Datastore…</div>
+
+  <script>
+    function handleLogout() {
+      alert("Session logged out successfully (local storage cleared).");
+      localStorage.removeItem("loggedIn");
+      localStorage.removeItem("username");
+      window.location.href = "login.html";
+    }
+
+    // No FALLBACK data — all data must come from the Catalyst Datastore.
+    // If the backend is unreachable, the user is shown a clear error with a retry button.
+    // This prevents officers from making decisions based on synthetic demo data.
+
+    const isLocal = window.location.hostname === "localhost" || 
+                    window.location.hostname === "127.0.0.1" || 
+                    window.location.protocol === "file:";
+
+    const BASE = isLocal || window.location.hostname.includes(".development.")
+        ? "https://predictcrimeai-60074448608.development.catalystserverless.in"
+        : "https://predictcrimeai-60074448608.catalystserverless.in";
+
+    const FUNCTION_URL = BASE + "/server/getDistrictCrimeStats/execute";
+
+    let activeData = [];
+
+    // DATA SOURCE POLICY: All intelligence data must originate from the
+    // Catalyst Datastore via the backend function. No synthetic fallback is shown.
+    // On connectivity failure, a clear error message with retry is displayed.
+    let activeShift = "all";
+    let currentLevel = "district";
+    let currentDistrictName = "";
+    let mapMarkers = [];
+    let pulseMarkers = [];
+
+    const map = L.map("map").setView([14.5, 76.5], 7);
+    
+    // Realistic Satellite Imagery
+    L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
+        attribution: "Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community"
+    }).addTo(map);
+
+    // Dark Clean Labels & Boundaries Overlay
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png", {
+        attribution: "&copy; OpenStreetMap &copy; CARTO",
+        subdomains: "abcd",
+        maxZoom: 19
+    }).addTo(map);
+
+    function getColor(ratio){
+        return ratio > 0.8 ? "#ef4444" : ratio > 0.6 ? "#f97316" : ratio > 0.4 ? "#eab308" : ratio > 0.2 ? "#10b981" : "#3b82f6";
+    }
+    function getRisk(ratio){
+        return ratio > 0.8 ? "CRITICAL" : ratio > 0.6 ? "HIGH" : ratio > 0.4 ? "MEDIUM" : ratio > 0.2 ? "LOW" : "MINIMAL";
+    }
+
+    function getCaseload(d, shift) {
+        if (shift === "all") return d.total_cases || 0;
+        if (!d.shifts) return d.total_cases || 0;
+        return d.shifts[shift] || 0;
+    }
+
+    // Intelligence-layer helpers: safely read enriched backend fields with graceful fallback.
+    // These are additive and never alter the existing UI structure/colors/layout.
+    function tierBadgeColor(tier) {
+        return { "CRITICAL": "#ef4444", "HIGH": "#f97316", "MODERATE": "#eab308", "LOW": "#10b981", "EMERGING": "#8b5cf6" }[String(tier || "").toUpperCase()] || "#64748b";
+    }
+    function shiftLabel(s) {
+        return { "morning": "Morning (06–12)", "afternoon": "Afternoon (12–18)", "evening": "Evening (18–24)", "night": "Night (00–06)" }[String(s || "").toLowerCase()] || (s ? String(s) : "—");
+    }
+    function safeVal(v, fallback) { return (v !== undefined && v !== null && v !== "") ? v : fallback; }
+
+    function setShift(shift) {
+        activeShift = shift;
+        document.querySelectorAll(".control-btn").forEach(btn => btn.classList.remove("active"));
+        document.getElementById("btn-shift-" + shift).classList.add("active");
+        renderView();
+    }
+
+    function renderView() {
+        // Clear old layers
+        mapMarkers.forEach(m => map.removeLayer(m));
+        mapMarkers = [];
+        pulseMarkers.forEach(m => map.removeLayer(m));
+        pulseMarkers = [];
+
+        if (activeData.length === 0) return;
+
+        const counts = activeData.map(d => getCaseload(d, activeShift));
+        const maxCases = Math.max(...counts, 1);
+        const total = counts.reduce((s, c) => s + c, 0);
+
+        document.getElementById("totalCases").textContent = total.toLocaleString();
+        
+        const list = document.getElementById("districtList");
+        list.innerHTML = "";
+
+        const sortedData = [...activeData].sort((a, b) => getCaseload(b, activeShift) - getCaseload(a, activeShift));
+
+        if (sortedData.length > 0) {
+            document.getElementById("topDistrict").textContent = currentLevel === "district" 
+                ? sortedData[0].district_name 
+                : sortedData[0].station_name;
+        }
+
+        if (currentLevel === "district") {
+            document.getElementById("alert-text").textContent =
+                sortedData.slice(0, 5).map(d => d.district_name + " (" + getCaseload(d, activeShift).toLocaleString() + ")").join("  ·  ");
+        } else {
+            document.getElementById("alert-text").textContent =
+                `Drill-down: ${currentDistrictName} (${total.toLocaleString()} cases total)`;
+        }
+
+        // Sidebar Rankings
+        sortedData.forEach((d, i) => {
+            const count = getCaseload(d, activeShift);
+            const ratio = count / maxCases;
+            const name = currentLevel === "district" ? d.district_name : d.station_name;
+            const subtext = currentLevel === "district" 
+                ? `Accused: ${d.total_accused.toLocaleString()} | Victims: ${d.total_victims.toLocaleString()}`
+                : `Accused: ${d.total_accused.toLocaleString()} | Types: ${d.crime_types}`;
+            const intelLine = d.peak_shift ? `Peak: ${shiftLabel(d.peak_shift)}` + (d.spike_ratio != null ? `  \u00b7  Spike ${Number(d.spike_ratio).toFixed(1)}\u00d7` : '') : '';
+
+            const div = document.createElement("div");
+            div.className = "district-item";
+            div.innerHTML = `
+                <div class="rank">#${i + 1}</div>
+                <span class="name">${name}</span>
+                <span class="count">${count.toLocaleString()}</span>
+                <div class="meta">${subtext}</div>
+                ${intelLine ? `<div class="meta" style="color:#60a5fa; margin-top:2px">${intelLine}</div>` : ''}
+                ${d.hotspot_tier ? `<div style="margin-top:4px; display:inline-block; padding:2px 7px; border-radius:8px; font-size:9px; font-weight:700; background:${tierBadgeColor(d.hotspot_tier)}22; color:${tierBadgeColor(d.hotspot_tier)}; border:1px solid ${tierBadgeColor(d.hotspot_tier)}44">${String(d.hotspot_tier).toUpperCase()}</div>` : ''}
+                <div style="margin-top: 6px; height: 4px; background: #1e293b; border-radius: 2px; overflow: hidden">
+                  <div style="height: 100%; width: ${Math.round(ratio * 100)}%; background: ${getColor(ratio)}"></div>
+                </div>`;
+            div.onclick = () => map.flyTo([d.lat, d.lon], currentLevel === "district" ? 9 : 12, { animate: true, duration: 1.2 });
+            list.appendChild(div);
+        });
+
+        // Map Circle Markers
+        sortedData.forEach(d => {
+            const count = getCaseload(d, activeShift);
+            const ratio = count / maxCases;
+            const color = getColor(ratio);
+            const name = currentLevel === "district" ? d.district_name : d.station_name;
+
+            const baseRad = currentLevel === "district" ? 8000 : 800;
+            const scaleFactor = currentLevel === "district" ? 220 : 25;
+            const circle = L.circle([d.lat, d.lon], {
+                radius: baseRad + Math.sqrt(count) * scaleFactor,
+                color, fillColor: color,
+                fillOpacity: ratio > 0.6 ? 0.65 : 0.45,
+                weight: ratio > 0.7 ? 3 : 1.5
+            }).addTo(map);
+
+            mapMarkers.push(circle);
+
+            if (d.has_spike) {
+                const pulseIcon = L.divIcon({
+                    className: 'pulse-icon',
+                    iconSize: [20, 20],
+                    iconAnchor: [10, 10]
+                });
+                const pulseMarker = L.marker([d.lat, d.lon], { icon: pulseIcon }).addTo(map);
+                pulseMarkers.push(pulseMarker);
+            }
+
+            if (currentLevel === "district") {
+                circle.on("click", () => {
+                    drillDown(d.district_id, d.district_name, [d.lat, d.lon]);
+                });
+                circle.bindTooltip(`<b>${name}</b><br>${count.toLocaleString()} cases<br><span style="color:#f87171;font-size:10px">Click to Drill-Down</span>`, { sticky: true });
+            } else {
+                circle.bindTooltip(`<b>${name}</b><br>${count.toLocaleString()} cases`, { sticky: true });
+            }
+
+            circle.bindPopup(`
+                <b style="color:#60a5fa; font-size:14px">${name}</b><br>
+                <table style="margin-top: 8px; font-size: 12px; width: 100%; border-collapse: collapse;">
+                  <tr style="border-bottom: 1px solid rgba(255,255,255,0.05)"><td style="color:#94a3b8; padding: 4px 0">Shift Caseload</td><td style="text-align:right; font-weight:600; padding: 4px 0">${count.toLocaleString()}</td></tr>
+                  <tr style="border-bottom: 1px solid rgba(255,255,255,0.05)"><td style="color:#94a3b8; padding: 4px 0">Total Cases</td><td style="text-align:right; padding: 4px 0">${d.total_cases.toLocaleString()}</td></tr>
+                  <tr style="border-bottom: 1px solid rgba(255,255,255,0.05)"><td style="color:#94a3b8; padding: 4px 0">Accused</td><td style="text-align:right; padding: 4px 0">${d.total_accused.toLocaleString()}</td></tr>
+                  <tr style="border-bottom: 1px solid rgba(255,255,255,0.05)"><td style="color:#94a3b8; padding: 4px 0">Crime Types</td><td style="text-align:right; padding: 4px 0">${d.crime_types}</td></tr>
+                  <tr style="border-bottom: 1px solid rgba(255,255,255,0.05)"><td style="color:#94a3b8; padding: 4px 0">Hotspot Tier</td><td style="text-align:right; padding: 4px 0">${safeVal(d.hotspot_tier, "—")}</td></tr>
+                  <tr style="border-bottom: 1px solid rgba(255,255,255,0.05)"><td style="color:#94a3b8; padding: 4px 0">Peak Shift</td><td style="text-align:right; padding: 4px 0">${shiftLabel(d.peak_shift)}</td></tr>
+                  <tr style="border-bottom: 1px solid rgba(255,255,255,0.05)"><td style="color:#94a3b8; padding: 4px 0">Spike Ratio</td><td style="text-align:right; padding: 4px 0">${d.spike_ratio != null ? Number(d.spike_ratio).toFixed(2) + "×" : "—"}</td></tr>
+                  <tr style="border-bottom: 1px solid rgba(255,255,255,0.05)"><td style="color:#94a3b8; padding: 4px 0">Urbanization Idx</td><td style="text-align:right; padding: 4px 0">${d.urbanization_index != null ? Number(d.urbanization_index).toFixed(2) : "—"}</td></tr>
+                  <tr><td style="color:#94a3b8; padding: 4px 0">Pop. Pressure Idx</td><td style="text-align:right; padding: 4px 0">${d.population_pressure_index != null ? Number(d.population_pressure_index).toFixed(2) : "—"}</td></tr>
+                  <tr style="border-bottom: 1px solid rgba(255,255,255,0.05)"><td style="color:#94a3b8; padding: 4px 0">Police Strength</td><td style="text-align:right; padding: 4px 0">${d.police_strength != null ? d.police_strength.toLocaleString() + " officers" : "—"}</td></tr>
+                  <tr><td style="color:#94a3b8; padding: 4px 0">Officer:Case Ratio</td><td style="text-align:right; padding: 4px 0">${d.officer_to_case_ratio != null ? "1 : " + Math.round(1 / d.officer_to_case_ratio).toLocaleString() : "—"}</td></tr>
+                </table>
+                <div style="margin-top: 10px; display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; background: ${color}22; color: ${color}; border: 1px solid ${color}44">
+                  ● ${getRisk(ratio)} RISK ZONE
+                </div>
+                ${d.hotspot_tier ? '<div style="margin-top:6px; display:inline-block; padding:3px 9px; border-radius:10px; font-size:10px; font-weight:700; background:' + tierBadgeColor(d.hotspot_tier) + '22; color:' + tierBadgeColor(d.hotspot_tier) + '; border:1px solid ' + tierBadgeColor(d.hotspot_tier) + '44">▲ ' + String(d.hotspot_tier).toUpperCase() + ' HOTSPOT</div>' : ''}
+                ${d.has_spike ? '<div style="margin-top:6px; color:#ef4444; font-size:10px; font-weight:bold">🚨 TREND SPIKE DETECTED' + (d.spike_month ? ' — ' + d.spike_month : '') + '</div>' : ''}
+                ${d.socio_economic_note ? '<div style="margin-top:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.06); color:#94a3b8; font-size:11px; line-height:1.4">📊 ' + d.socio_economic_note + '</div>' : ''}
+            `);
+        });
+    }
+
+    function parseFunctionResponse(raw) {
+        const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
+        const payload = parsed.output ? JSON.parse(parsed.output) : parsed;
+        if (!payload.success) {
+            throw new Error(payload.error || "Function returned success=false");
+        }
+        return payload;
+    }
+
+    function loadDistrictOverview() {
+        currentLevel = "district";
+        document.getElementById("map-back-btn").style.display = "none";
+        document.querySelector(".section-title").textContent = "District Rankings";
+        document.getElementById("districtList").innerHTML = '<div style="text-align:center;padding:40px 0;color:#64748b"><div style="font-size:32px;margin-bottom:12px">📡</div><b>Connecting to Datastore…</b></div>';
+
+        fetch(FUNCTION_URL)
+            .then(r => {
+                if (!r.ok) throw new Error(`HTTP ${r.status}`);
+                return r.json();
+            })
+            .then(raw => {
+                const parsed = parseFunctionResponse(raw);
+                if (parsed.data && parsed.data.length) {
+                    activeData = parsed.data;
+                    renderView();
+                    updateSourceIndicator("live", parsed.total_cases);
+                } else {
+                    throw new Error("No district data returned from Datastore");
+                }
+            })
+            .catch(err => {
+                console.error("Datastore unavailable:", err.message);
+                activeData = [];
+                document.getElementById("districtList").innerHTML = datastoreErrorUI(err.message, loadDistrictOverview);
+                renderView();
+                updateSourceIndicator("error", null, err.message);
+            });
+    }
+
+    function drillDown(districtId, districtName, coords) {
+        currentLevel = "unit";
+        currentDistrictName = districtName;
+        document.getElementById("map-back-btn").style.display = "block";
+        document.querySelector(".section-title").textContent = `Stations in ${districtName}`;
+        
+        map.flyTo(coords, 10, { animate: true, duration: 1.0 });
+
+        const url = `${FUNCTION_URL}?district_id=${districtId}`;
+        fetch(url)
+            .then(r => {
+                if (!r.ok) throw new Error(`HTTP ${r.status}`);
+                return r.json();
+            })
+            .then(raw => {
+                const parsed = parseFunctionResponse(raw);
+                if (parsed.data) {
+                    activeData = parsed.data;
+                    renderView();
+                    updateSourceIndicator("live", parsed.total_cases);
+                    if (parsed.data.length === 0) {
+                        alert(`No police stations found for ${districtName}. ${parsed.warning || ""}`);
+                    }
+                } else {
+                    throw new Error("No station data in response");
+                }
+            })
+            .catch(err => {
+                console.error("Drill-down failed:", err);
+                alert(`Failed to load police stations for ${districtName}: ${err.message}`);
+            });
+    }
+
+    function drillUp() {
+        map.flyTo([14.5, 76.5], 7, { animate: true, duration: 1.0 });
+        loadDistrictOverview();
+    }
+
+    function datastoreErrorUI(message, retryFn) {
+        return `
+            <div style="text-align:center;padding:30px 16px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:10px;margin-top:8px">
+                <div style="font-size:36px;margin-bottom:10px">⚠️</div>
+                <div style="color:#f87171;font-weight:700;font-size:14px;margin-bottom:6px">Datastore Unavailable</div>
+                <div style="color:#94a3b8;font-size:12px;margin-bottom:16px;line-height:1.4">${message}</div>
+                <button onclick="${retryFn.name}()" style="background:#ef4444;border:none;color:#fff;padding:8px 20px;border-radius:6px;cursor:pointer;font-weight:600;font-size:12px">🔄 Retry Connection</button>
+                <div style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.06);color:#64748b;font-size:11px">Go to <a href="diagnostic.html" style="color:#60a5fa">Diagnostics</a> to test all endpoints.</div>
+            </div>`;
+    }
+
+    function updateSourceIndicator(source, totalCases, errorMsg) {
+        const srcEl = document.getElementById("data-src");
+        if (source === "live") {
+            const totalText = totalCases ? ` (${Number(totalCases).toLocaleString()} cases)` : "";
+            srcEl.textContent = `✅ Live data from Catalyst Datastore${totalText}`;
+            srcEl.style.borderColor = "#10b981"; srcEl.style.color = "#10b981";
+        } else if (source === "error") {
+            srcEl.textContent = `⚠️ Datastore error: ${errorMsg || "connection failed"}`;
+            srcEl.style.borderColor = "#ef4444"; srcEl.style.color = "#ef4444";
+        } else {
+            srcEl.textContent = "⚠️ No data available — waiting for retry…";
+            srcEl.style.borderColor = "#f97316"; srcEl.style.color = "#f97316";
+        }
+    }
+
+    // Legend
+    const legend = L.control({ position: "bottomright" });
+    legend.onAdd = () => {
+        const div = L.DomUtil.create("div");
+        div.style.cssText = "background:rgba(15,23,42,0.92); padding:12px 16px; border-radius:10px; border:1px solid rgba(59, 130, 246, 0.25); font-size:11px; color:#e2e8f0; backdrop-filter:blur(8px);";
+        div.innerHTML = `<div style="font-weight:700; margin-bottom:8px; color:#60a5fa">Crime Intensity Legend</div>
+            <div style="display:flex; align-items:center; gap:8px; margin:4px 0"><div style="width:12px; height:12px; border-radius:50%; background:#ef4444"></div>Critical (&gt;80%)</div>
+            <div style="display:flex; align-items:center; gap:8px; margin:4px 0"><div style="width:12px; height:12px; border-radius:50%; background:#f97316"></div>High (60–80%)</div>
+            <div style="display:flex; align-items:center; gap:8px; margin:4px 0"><div style="width:12px; height:12px; border-radius:50%; background:#eab308"></div>Medium (40–60%)</div>
+            <div style="display:flex; align-items:center; gap:8px; margin:4px 0"><div style="width:12px; height:12px; border-radius:50%; background:#10b981"></div>Low (20–40%)</div>
+            <div style="display:flex; align-items:center; gap:8px; margin:4px 0"><div style="width:12px; height:12px; border-radius:50%; background:#3b82f6"></div>Minimal (&lt;20%)</div>`;
+        return div;
+    };
+    legend.addTo(map);
+
+    loadDistrictOverview();
+  </script>
+</body>
+</html>

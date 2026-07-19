@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>CrimePredictAI — Emerging Trend Alerts & Anomalies</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      margin: 0;
+      padding: 0;
+      background: #0b0f19;
+      color: #f1f5f9;
+      font-family: 'Inter', sans-serif;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Left Sidebar Navigation */
+    .sidebar-nav {
+      width: 260px;
+      height: 100vh;
+      background: #0f172a;
+      border-right: 1px solid rgba(59, 130, 246, 0.15);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      z-index: 100;
+    }
+    .sidebar-brand {
+      padding: 24px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .brand-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .brand-subtitle {
+      font-size: 10px;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 4px;
+    }
+    .sidebar-menu {
+      flex: 1;
+      padding: 20px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      overflow-y: auto;
+    }
+    .menu-link {
+      text-decoration: none;
+      color: #94a3b8;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 10px 16px;
+      border-radius: 8px;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .menu-link:hover {
+      color: #3b82f6;
+      background: rgba(59, 130, 246, 0.06);
+    }
+    .menu-link.active {
+      color: #fff;
+      background: linear-gradient(135deg, #1d4ed8, #3b82f6);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+    }
+    .sidebar-footer {
+      padding: 20px;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .dispatch-btn {
+      width: 100%;
+      background: #7f1d1d;
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      padding: 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.3s;
+    }
+    .dispatch-btn:hover {
+      background: #ef4444;
+      color: #fff;
+      box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+    }
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: #10b981;
+    }
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #10b981;
+      animation: pulse-dot 1.5s infinite;
+    }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    .help-link {
+      font-size: 11px;
+      color: #64748b;
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .help-link:hover {
+      color: #94a3b8;
+    }
+
+    /* Main Content Wrapper */
+    .main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Top Header Panel */
+    .top-header {
+      height: 70px;
+      background: #0f172a;
+      border-bottom: 1px solid rgba(59, 130, 246, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      flex-shrink: 0;
+    }
+    .header-left h1 {
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+      margin: 0;
+      letter-spacing: 0.5px;
+    }
+    .search-box {
+      width: 320px;
+      position: relative;
+    }
+    .search-box input {
+      width: 100%;
+      background: #0b0f19;
+      border: 1px solid rgba(59, 130, 246, 0.2);
+      border-radius: 8px;
+      padding: 8px 16px;
+      color: #fff;
+      font-size: 12px;
+      outline: none;
+      transition: border-color 0.3s;
+    }
+    .search-box input:focus {
+      border-color: #3b82f6;
+    }
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .icon-action {
+      color: #94a3b8;
+      cursor: pointer;
+      font-size: 16px;
+      transition: color 0.2s;
+    }
+    .icon-action:hover {
+      color: #fff;
+    }
+    .user-profile {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(30, 41, 59, 0.5);
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(59, 130, 246, 0.1);
+      font-size: 11px;
+    }
+    .user-profile b {
+      color: #fff;
+    }
+    .user-profile span {
+      color: #64748b;
+      font-size: 10px;
+    }
+    .logout-icon-btn {
+      background: none;
+      border: none;
+      color: #f87171;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      padding: 6px 12px;
+      border-radius: 6px;
+      transition: all 0.3s;
+      border: 1px solid rgba(248, 113, 113, 0.2);
+      background: rgba(248, 113, 113, 0.05);
+    }
+    .logout-icon-btn:hover {
+      background: rgba(239, 68, 68, 0.8);
+      color: #fff;
+      border-color: #ef4444;
+    }
+
+    #container {
+      display: flex;
+      flex: 1;
+      min-height: 0;
+    }
+
+    #sidebar {
+      width: 320px;
+      background: #0f172a;
+      border-right: 1px solid rgba(59, 130, 246, 0.15);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      flex-shrink: 0;
+    }
+
+    h2 {
+      font-size: 18px;
+      font-weight: 700;
+      color: #60a5fa;
+      margin-bottom: 6px;
+    }
+    p.desc {
+      font-size: 12px;
+      color: #94a3b8;
+      line-height: 1.5;
+    }
+
+    .filter-card {
+      background: rgba(30, 41, 59, 0.5);
+      border: 1px solid rgba(59, 130, 246, 0.1);
+      border-radius: 12px;
+      padding: 16px;
+    }
+    .filter-card label {
+      display: block;
+      font-size: 11px;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+    .filter-card input {
+      width: 100%;
+      background: #0b0f19;
+      border: 1px solid rgba(59, 130, 246, 0.2);
+      border-radius: 6px;
+      padding: 8px 12px;
+      color: #f1f5f9;
+      font-size: 13px;
+      margin-bottom: 12px;
+    }
+    .filter-card button {
+      width: 100%;
+      background: #3b82f6;
+      border: none;
+      color: #fff;
+      font-weight: 600;
+      font-size: 13px;
+      padding: 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .filter-card button:hover {
+      background: #2563eb;
+    }
+
+    #grid-pane {
+      flex: 1;
+      padding: 32px;
+      overflow-y: auto;
+      background: #0b0f19;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      position: relative;
+    }
+
+    #grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    .card {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(59, 130, 246, 0.1);
+      border-radius: 14px;
+      padding: 20px;
+      border-left: 5px solid #3b82f6;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .card:hover {
+      transform: translateY(-2px);
+    }
+    
+    .card.Critical {
+      border-left-color: #ef4444;
+      box-shadow: 0 0 15px rgba(239, 68, 68, 0.15);
+      animation: pulse-red 2s infinite;
+    }
+    .card.High {
+      border-left-color: #f97316;
+      box-shadow: 0 0 15px rgba(249, 115, 22, 0.1);
+    }
+    .card.Normal {
+      border-left-color: #eab308;
+    }
+    .card.Low {
+      border-left-color: #10b981;
+      opacity: 0.8;
+    }
+
+    .card h3 {
+      font-size: 16px;
+      font-weight: 700;
+      color: #f1f5f9;
+      margin-bottom: 8px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+      letter-spacing: 0.5px;
+    }
+    .card.Critical .badge { background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); }
+    .card.High .badge { background: rgba(249, 115, 22, 0.15); color: #f97316; border: 1px solid rgba(249, 115, 22, 0.3); }
+    .card.Normal .badge { background: rgba(234, 179, 8, 0.15); color: #eab308; border: 1px solid rgba(234, 179, 8, 0.3); }
+    .card.Low .badge { background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); }
+
+    .stat {
+      font-size: 12.5px;
+      color: #94a3b8;
+      margin: 4px 0;
+    }
+    .stat b {
+      color: #e2e8f0;
+    }
+
+    @keyframes pulse-red {
+      0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+      70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+
+    #info {
+      font-size: 13px;
+      color: #94a3b8;
+    }
+    
+    #data-src {
+      position: absolute;
+      bottom: 16px;
+      left: 16px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(59, 130, 246, 0.2);
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 11px;
+      color: #10b981;
+      pointer-events: none;
+      z-index: 10;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Left Sidebar Navigation -->
+  <div class="sidebar-nav">
+    <div class="sidebar-brand">
+      <div class="brand-title">🚨 KSP Intelligence</div>
+      <div class="brand-subtitle">Crime Intelligence Unit</div>
+    </div>
+    <div class="sidebar-menu">
+      <a href="index.html" class="menu-link">🗺 Strategic Command</a>
+      <a href="category.html" class="menu-link">📊 Category Breakdown</a>
+      <a href="trends.html" class="menu-link">📈 Historical Trends</a>
+      <a href="network.html" class="menu-link">🕸 Link Analysis</a>
+      <a href="anomalies.html" class="menu-link active">🚨 Anomaly Alerts</a>
+      <a href="risk.html" class="menu-link">🔮 Predictive Risk</a>
+      <a href="diagnostic.html" class="menu-link">⚙ Diagnostics</a>
+    </div>
+    <div class="sidebar-footer">
+      <button class="dispatch-btn" onclick="alert('Dispatch units alerted.')">🚨 Emergency Dispatch</button>
+      <div class="status-indicator">
+        <div class="status-dot"></div>
+        <span>System Status: Active</span>
+      </div>
+      <a href="#" class="help-link">Intelligence Help Desk</a>
+    </div>
+  </div>
+
+  <!-- Main Content Wrapper -->
+  <div class="main-content">
+    <!-- Top Header Panel -->
+    <header class="top-header">
+      <div class="header-left">
+        <h1>Strategic Intelligence Hub</h1>
+      </div>
+      <div class="search-box">
+        <input type="text" placeholder="Search Intelligence Database...">
+      </div>
+      <div class="header-right">
+        <span class="icon-action">🔔</span>
+        <span class="icon-action">⚙</span>
+        <div class="user-profile">
+          👤 <div><b>SP - Bengaluru</b><br><span>Session: KSP-8821</span></div>
+        </div>
+        <button onclick="handleLogout()" class="logout-icon-btn" title="Secure Logout">🚪 Logout</button>
+      </div>
+    </header>
+
+  <div id="container">
+    <div id="sidebar">
+      <div>
+        <h2>Anomaly Alerts</h2>
+        <p class="desc">Real-time anomaly detection identifying districts where the latest month's crime numbers significantly spike above their historical rolling average.</p>
+      </div>
+
+      <div class="filter-card">
+        <label>Crime Category ID (Optional)</label>
+        <input type="number" id="crimeHeadId" placeholder="e.g. 3" />
+        
+        <label>Sensitivity (× Average)</label>
+        <input type="number" id="threshold" value="1.5" step="0.1" min="1.0" />
+        
+        <button onclick="loadAnomalies()">Update Alerts</button>
+      </div>
+    </div>
+
+    <div id="grid-pane">
+      <div id="info">Scanning datastore for deviations...</div>
+      <div id="grid"></div>
+      <div id="data-src">Querying...</div>
+    </div>
+  </div> <!-- Close #container -->
+  </div> <!-- Close .main-content wrapper -->
+
+  <script>
+    function handleLogout() {
+      alert("Session logged out successfully (local storage cleared).");
+      localStorage.removeItem("loggedIn");
+      localStorage.removeItem("username");
+      window.location.href = "login.html";
+    }
+
+    const isLocal = window.location.hostname === "localhost" || 
+                    window.location.hostname === "127.0.0.1" || 
+                    window.location.protocol === "file:";
+
+    const BASE = isLocal || window.location.hostname.includes(".development.")
+        ? "https://predictcrimeai-60074448608.development.catalystserverless.in"
+        : "https://predictcrimeai-60074448608.catalystserverless.in";
+
+    const FUNCTION_URL = isLocal
+        ? BASE + "/server/detectAnomalies/execute"
+        : "/server/detectAnomalies/execute";
+
+    // DATA SOURCE POLICY: All intelligence data must originate from the
+    // Catalyst Datastore via the backend function. No synthetic fallback is shown.
+    // On connectivity failure, a clear error message with retry is displayed.
+
+    function loadAnomalies() {
+      const crimeHeadId = document.getElementById('crimeHeadId').value.trim();
+      const threshold = document.getElementById('threshold').value || 1.5;
+
+      let url = `${FUNCTION_URL}?threshold=${threshold}`;
+      if (crimeHeadId) url += `&crime_head_id=${crimeHeadId}`;
+
+      document.getElementById('info').innerText = 'Running mathematical analytics...';
+      document.getElementById('data-src').textContent = "⌛ Fetching...";
+      document.getElementById('data-src').style.color = "#fbbf24";
+      document.getElementById('data-src').style.borderColor = "rgba(251, 191, 36, 0.3)";
+
+      fetch(url)
+        .then(response => response.json())
+        .then(raw => {
+          const parsed = JSON.parse(raw.output);
+
+          if (!parsed.success) {
+            document.getElementById('info').innerHTML = `<span style="color:#f87171">Error: ${parsed.error}</span>`;
+            return;
+          }
+
+          document.getElementById('data-src').textContent = isLocal
+            ? "✅ Live Data (Cloud Dev Environment)"
+            : "✅ Live Data from Datastore";
+          document.getElementById('data-src').style.color = "#10b981";
+          document.getElementById('data-src').style.borderColor = "rgba(16, 185, 129, 0.3)";
+
+          renderCards(parsed.data);
+        })
+        .catch(err => {
+          console.error("Datastore unavailable:", err.message);
+          document.getElementById('data-src').textContent = "⚠️ Datastore error — no data available";
+          document.getElementById('data-src').style.color = "#ef4444";
+          document.getElementById('data-src').style.borderColor = "rgba(239, 68, 68, 0.3)";
+          document.getElementById('info').innerHTML = datastoreErrorUI(err.message, loadAnomalies);
+        });
+    }
+
+    function datastoreErrorUI(message, retryFn) {
+      return `<div style="text-align:center;padding:30px 16px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:10px;margin-top:8px">
+        <div style="font-size:36px;margin-bottom:10px">⚠️</div>
+        <div style="color:#f87171;font-weight:700;font-size:14px;margin-bottom:6px">Datastore Unavailable</div>
+        <div style="color:#94a3b8;font-size:12px;margin-bottom:16px;line-height:1.4">${message}</div>
+        <button onclick="${retryFn.name}()" style="background:#ef4444;border:none;color:#fff;padding:8px 20px;border-radius:6px;cursor:pointer;font-weight:600;font-size:12px">🔄 Retry Connection</button>
+        <div style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.06);color:#64748b;font-size:11px">Go to <a href="diagnostic.html" style="color:#60a5fa">Diagnostics</a> to test all endpoints.</div>
+      </div>`;
+    }
+
+    function renderCards(data) {
+      if (!data || !data.allDistricts || !data.allDistricts.length) {
+        document.getElementById('info').innerHTML = '<span style="color:#f87171">No data returned from Datastore.</span>';
+        document.getElementById('grid').innerHTML = '';
+        return;
+      }
+      document.getElementById('info').innerText =
+        `${data.anomalies.length} district(s) flagged above threshold, out of ${data.allDistricts.length} analyzed. ` +
+        `Generated at ${new Date(data.generatedAt).toLocaleString()}.`;
+
+      const shiftLbl = s => ({ 'morning':'Morning (06–12)','afternoon':'Afternoon (12–18)','evening':'Evening (18–24)','night':'Night (00–06)' }[String(s||'').toLowerCase()] || (s||'—'));
+      const grid = document.getElementById('grid');
+      grid.innerHTML = data.allDistricts.map(d => {
+        const behavBits = [];
+        if (d.peak_shift) behavBits.push(`<div class="stat" style="color:#60a5fa">Peak Shift: <b>${shiftLbl(d.peak_shift)}</b></div>`);
+        if (d.dominant_crime_head) behavBits.push(`<div class="stat">Dominant Crime: <b>${d.dominant_crime_head}${d.dominant_crime_share != null ? ' (' + Number(d.dominant_crime_share).toFixed(0) + '%)' : ''}</b></div>`);
+        if (d.repeat_offender_hotspot === true) behavBits.push(`<div class="stat" style="color:#f87171; font-weight:600">⚠ Repeat-Offender Hotspot (${d.multi_accused_cases != null ? d.multi_accused_cases : '?'} multi-accused cases)</div>`);
+        if (d.accused_per_case != null) behavBits.push(`<div class="stat">Accused / Case: <b>${Number(d.accused_per_case).toFixed(2)}</b></div>`);
+        if (d.heinous_cases != null && d.heinous_cases > 0) behavBits.push(`<div class="stat" style="color:#ef4444; font-weight:600">⚠ Heinous Cases: <b>${d.heinous_cases}</b> (${Number(d.heinous_percent).toFixed(1)}% — POCSO/NDPS/major IPC)</div>`);
+        const note = d.behavioral_note ? `<div style="margin-top:10px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.06); color:#94a3b8; font-size:11px; line-height:1.45">🔍 ${d.behavioral_note}</div>` : '';
+        return `<div class="card ${d.severity}">
+          <span class="badge">${d.severity}</span>
+          <h3>${d.districtName}</h3>
+          <div class="stat">Latest Month (${d.latestMonth}): <b>${d.latestCount} cases</b></div>
+          <div class="stat">Historical Average: <b>${d.historicalAvg}</b>/month</div>
+          <div class="stat">Deviation: <b style="color: ${d.deviationRatio >= 1.5 ? '#f87171' : '#10b981'}">${d.deviationRatio}×</b> average</div>
+          ${behavBits.join('')}
+          ${note}
+        </div>`;
+      }).join('');
+    }
+
+    // Auto-load on open
+    window.onload = loadAnomalies;
+  </script>
+</body>
+</html>

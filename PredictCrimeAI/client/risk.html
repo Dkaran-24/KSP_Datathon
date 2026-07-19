@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>CrimePredictAI — Predictive Risk Forecasting</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      margin: 0;
+      padding: 0;
+      background: #0b0f19;
+      color: #f1f5f9;
+      font-family: 'Inter', sans-serif;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Left Sidebar Navigation */
+    .sidebar-nav {
+      width: 260px;
+      height: 100vh;
+      background: #0f172a;
+      border-right: 1px solid rgba(59, 130, 246, 0.15);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      z-index: 100;
+    }
+    .sidebar-brand {
+      padding: 24px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .brand-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .brand-subtitle {
+      font-size: 10px;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 4px;
+    }
+    .sidebar-menu {
+      flex: 1;
+      padding: 20px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      overflow-y: auto;
+    }
+    .menu-link {
+      text-decoration: none;
+      color: #94a3b8;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 10px 16px;
+      border-radius: 8px;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .menu-link:hover {
+      color: #3b82f6;
+      background: rgba(59, 130, 246, 0.06);
+    }
+    .menu-link.active {
+      color: #fff;
+      background: linear-gradient(135deg, #1d4ed8, #3b82f6);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+    }
+    .sidebar-footer {
+      padding: 20px;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .dispatch-btn {
+      width: 100%;
+      background: #7f1d1d;
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      padding: 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.3s;
+    }
+    .dispatch-btn:hover {
+      background: #ef4444;
+      color: #fff;
+      box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+    }
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: #10b981;
+    }
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #10b981;
+      animation: pulse-dot 1.5s infinite;
+    }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    .help-link {
+      font-size: 11px;
+      color: #64748b;
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .help-link:hover {
+      color: #94a3b8;
+    }
+
+    /* Main Content Wrapper */
+    .main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Top Header Panel */
+    .top-header {
+      height: 70px;
+      background: #0f172a;
+      border-bottom: 1px solid rgba(59, 130, 246, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      flex-shrink: 0;
+    }
+    .header-left h1 {
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+      margin: 0;
+      letter-spacing: 0.5px;
+    }
+    .search-box {
+      width: 320px;
+      position: relative;
+    }
+    .search-box input {
+      width: 100%;
+      background: #0b0f19;
+      border: 1px solid rgba(59, 130, 246, 0.2);
+      border-radius: 8px;
+      padding: 8px 16px;
+      color: #fff;
+      font-size: 12px;
+      outline: none;
+      transition: border-color 0.3s;
+    }
+    .search-box input:focus {
+      border-color: #3b82f6;
+    }
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .icon-action {
+      color: #94a3b8;
+      cursor: pointer;
+      font-size: 16px;
+      transition: color 0.2s;
+    }
+    .icon-action:hover {
+      color: #fff;
+    }
+    .user-profile {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(30, 41, 59, 0.5);
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(59, 130, 246, 0.1);
+      font-size: 11px;
+    }
+    .user-profile b {
+      color: #fff;
+    }
+    .user-profile span {
+      color: #64748b;
+      font-size: 10px;
+    }
+    .logout-icon-btn {
+      background: none;
+      border: none;
+      color: #f87171;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      padding: 6px 12px;
+      border-radius: 6px;
+      transition: all 0.3s;
+      border: 1px solid rgba(248, 113, 113, 0.2);
+      background: rgba(248, 113, 113, 0.05);
+    }
+    .logout-icon-btn:hover {
+      background: rgba(239, 68, 68, 0.8);
+      color: #fff;
+      border-color: #ef4444;
+    }
+
+    #container {
+      display: flex;
+      flex: 1;
+      min-height: 0;
+    }
+
+    #sidebar {
+      width: 320px;
+      background: #0f172a;
+      border-right: 1px solid rgba(59, 130, 246, 0.15);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      flex-shrink: 0;
+    }
+
+    h2 {
+      font-size: 18px;
+      font-weight: 700;
+      color: #60a5fa;
+      margin-bottom: 6px;
+    }
+    p.desc {
+      font-size: 12px;
+      color: #94a3b8;
+      line-height: 1.5;
+    }
+
+    .filter-card {
+      background: rgba(30, 41, 59, 0.5);
+      border: 1px solid rgba(59, 130, 246, 0.1);
+      border-radius: 12px;
+      padding: 16px;
+    }
+    .filter-card label {
+      display: block;
+      font-size: 11px;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+    .filter-card input {
+      width: 100%;
+      background: #0b0f19;
+      border: 1px solid rgba(59, 130, 246, 0.2);
+      border-radius: 6px;
+      padding: 8px 12px;
+      color: #f1f5f9;
+      font-size: 13px;
+      margin-bottom: 12px;
+    }
+    .filter-card button {
+      width: 100%;
+      background: #3b82f6;
+      border: none;
+      color: #fff;
+      font-weight: 600;
+      font-size: 13px;
+      padding: 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .filter-card button:hover {
+      background: #2563eb;
+    }
+
+    #result-pane {
+      flex: 1;
+      padding: 32px;
+      background: #0b0f19;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      position: relative;
+      overflow-y: auto;
+    }
+
+    #resultWrap {
+      max-width: 480px;
+      margin-top: 16px;
+    }
+
+    .scoreCard {
+      background: rgba(15, 23, 42, 0.6);
+      border-radius: 16px;
+      padding: 32px;
+      text-align: center;
+      border: 2px solid rgba(59, 130, 246, 0.25);
+      animation: slideIn 0.3s ease;
+    }
+    
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .scoreCard.CRITICAL { border-color: #ef4444; box-shadow: 0 0 20px rgba(239, 68, 68, 0.15); }
+    .scoreCard.HIGH { border-color: #f97316; box-shadow: 0 0 20px rgba(249, 115, 22, 0.1); }
+    .scoreCard.MEDIUM { border-color: #eab308; }
+    .scoreCard.LOW { border-color: #10b981; }
+
+    .scoreNum {
+      font-size: 64px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #f1f5f9, #94a3b8);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .scoreCard.CRITICAL .scoreNum { background: linear-gradient(135deg, #fca5a5, #ef4444); -webkit-background-clip: text;
+      background-clip: text; }
+    .scoreCard.HIGH .scoreNum { background: linear-gradient(135deg, #fed7aa, #f97316); -webkit-background-clip: text;
+      background-clip: text; }
+    .scoreCard.MEDIUM .scoreNum { background: linear-gradient(135deg, #fef08a, #eab308); -webkit-background-clip: text;
+      background-clip: text; }
+    .scoreCard.LOW .scoreNum { background: linear-gradient(135deg, #a7f3d0, #10b981); -webkit-background-clip: text;
+      background-clip: text; }
+
+    .scoreLabel {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      margin-top: 8px;
+      text-transform: uppercase;
+      color: #94a3b8;
+    }
+    .scoreCard.CRITICAL .scoreLabel { color: #f87171; }
+    .scoreCard.HIGH .scoreLabel { color: #fb923c; }
+    .scoreCard.MEDIUM .scoreLabel { color: #facc15; }
+    .scoreCard.LOW .scoreLabel { color: #34d399; }
+
+    .detailGrid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 24px;
+      text-align: left;
+    }
+    .detailGrid div {
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid rgba(59, 130, 246, 0.1);
+      padding: 12px;
+      border-radius: 8px;
+    }
+    .detailGrid .label {
+      font-size: 10px;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .detailGrid .value {
+      font-size: 18px;
+      font-weight: 700;
+      margin-top: 4px;
+      color: #e2e8f0;
+    }
+
+    #info {
+      font-size: 13px;
+      color: #94a3b8;
+    }
+    
+    #data-src {
+      position: absolute;
+      bottom: 16px;
+      left: 16px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(59, 130, 246, 0.2);
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 11px;
+      color: #10b981;
+      pointer-events: none;
+      z-index: 10;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Left Sidebar Navigation -->
+  <div class="sidebar-nav">
+    <div class="sidebar-brand">
+      <div class="brand-title">🚨 KSP Intelligence</div>
+      <div class="brand-subtitle">Crime Intelligence Unit</div>
+    </div>
+    <div class="sidebar-menu">
+      <a href="index.html" class="menu-link">🗺 Strategic Command</a>
+      <a href="category.html" class="menu-link">📊 Category Breakdown</a>
+      <a href="trends.html" class="menu-link">📈 Historical Trends</a>
+      <a href="network.html" class="menu-link">🕸 Link Analysis</a>
+      <a href="anomalies.html" class="menu-link">🚨 Anomaly Alerts</a>
+      <a href="risk.html" class="menu-link active">🔮 Predictive Risk</a>
+      <a href="diagnostic.html" class="menu-link">⚙ Diagnostics</a>
+    </div>
+    <div class="sidebar-footer">
+      <button class="dispatch-btn" onclick="alert('Dispatch units alerted.')">🚨 Emergency Dispatch</button>
+      <div class="status-indicator">
+        <div class="status-dot"></div>
+        <span>System Status: Active</span>
+      </div>
+      <a href="#" class="help-link">Intelligence Help Desk</a>
+    </div>
+  </div>
+
+  <!-- Main Content Wrapper -->
+  <div class="main-content">
+    <!-- Top Header Panel -->
+    <header class="top-header">
+      <div class="header-left">
+        <h1>Strategic Intelligence Hub</h1>
+      </div>
+      <div class="search-box">
+        <input type="text" placeholder="Search Intelligence Database...">
+      </div>
+      <div class="header-right">
+        <span class="icon-action">🔔</span>
+        <span class="icon-action">⚙</span>
+        <div class="user-profile">
+          👤 <div><b>SP - Bengaluru</b><br><span>Session: KSP-8821</span></div>
+        </div>
+        <button onclick="handleLogout()" class="logout-icon-btn" title="Secure Logout">🚪 Logout</button>
+      </div>
+    </header>
+
+  <div id="container">
+    <div id="sidebar">
+      <div>
+        <h2>Risk Forecasting</h2>
+        <p class="desc">AI-driven crime probability forecasting utilizing historical deviations and trend algorithms. Generates a risk profile for the next month based on district and category coefficients.</p>
+      </div>
+
+      <div class="filter-card">
+        <label>District ID</label>
+        <input type="number" id="districtId" value="5" />
+        
+        <label>Crime Category ID</label>
+        <input type="number" id="crimeHeadId" value="1" />
+        
+        <button onclick="loadRisk()">Run AI Predictor</button>
+      </div>
+    </div>
+
+    <div id="result-pane">
+      <div id="info">Select parameters and trigger the AI engine...</div>
+      <div id="resultWrap"></div>
+      <div id="data-src">Querying...</div>
+    </div>
+  </div> <!-- Close #container -->
+  </div> <!-- Close .main-content wrapper -->
+
+  <script>
+    function handleLogout() {
+      alert("Session logged out successfully (local storage cleared).");
+      localStorage.removeItem("loggedIn");
+      localStorage.removeItem("username");
+      window.location.href = "login.html";
+    }
+
+    const isLocal = window.location.hostname === "localhost" || 
+                    window.location.hostname === "127.0.0.1" || 
+                    window.location.protocol === "file:";
+
+    const BASE = isLocal || window.location.hostname.includes(".development.")
+        ? "https://predictcrimeai-60074448608.development.catalystserverless.in"
+        : "https://predictcrimeai-60074448608.catalystserverless.in";
+
+    const FUNCTION_URL = isLocal
+        ? BASE + "/server/predictCrimeRisk/execute"
+        : "/server/predictCrimeRisk/execute";
+
+    // DATA SOURCE POLICY: All intelligence data must originate from the
+    // Catalyst Datastore via the backend function. No synthetic fallback is shown.
+    // On connectivity failure, a clear error message with retry is displayed.
+
+    function datastoreErrorUI(message, retryFn) {
+      return `<div style="text-align:center;padding:30px 16px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:10px;margin-top:8px">
+        <div style="font-size:36px;margin-bottom:10px">⚠️</div>
+        <div style="color:#f87171;font-weight:700;font-size:14px;margin-bottom:6px">Datastore Unavailable</div>
+        <div style="color:#94a3b8;font-size:12px;margin-bottom:16px;line-height:1.4">${message}</div>
+        <button onclick="${retryFn.name}()" style="background:#ef4444;border:none;color:#fff;padding:8px 20px;border-radius:6px;cursor:pointer;font-weight:600;font-size:12px">🔄 Retry Connection</button>
+        <div style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.06);color:#64748b;font-size:11px">Go to <a href="diagnostic.html" style="color:#60a5fa">Diagnostics</a> to test all endpoints.</div>
+      </div>`;
+    }
+
+    function loadRisk() {
+      const districtId = document.getElementById('districtId').value || 5;
+      const crimeHeadId = document.getElementById('crimeHeadId').value || 1;
+
+      const url = `${FUNCTION_URL}?district_id=${districtId}&crime_head_id=${crimeHeadId}`;
+
+      document.getElementById('info').innerText = 'Initializing risk modeling matrices...';
+      document.getElementById('resultWrap').innerHTML = '';
+      document.getElementById('data-src').textContent = "⌛ Fetching...";
+      document.getElementById('data-src').style.color = "#fbbf24";
+      document.getElementById('data-src').style.borderColor = "rgba(251, 191, 36, 0.3)";
+
+      fetch(url)
+        .then(response => response.json())
+        .then(raw => {
+          const parsed = JSON.parse(raw.output);
+
+          if (!parsed.success) {
+            document.getElementById('info').innerHTML = `<span style="color:#f87171">Error: ${parsed.error}</span>`;
+            return;
+          }
+          document.getElementById('data-src').textContent = isLocal
+            ? "✅ Live Data (Cloud Dev Environment)"
+            : "✅ Live Data from Datastore";
+          document.getElementById('data-src').style.color = "#10b981";
+          document.getElementById('data-src').style.borderColor = "rgba(16, 185, 129, 0.3)";
+
+          renderResult(parsed);
+        })
+        .catch(err => {
+          console.error("Datastore unavailable:", err.message);
+          document.getElementById('data-src').textContent = "⚠️ Datastore error — no data available";
+          document.getElementById('data-src').style.color = "#ef4444";
+          document.getElementById('data-src').style.borderColor = "rgba(239, 68, 68, 0.3)";
+          document.getElementById('info').innerHTML = datastoreErrorUI(err.message, loadRisk);
+          document.getElementById('resultWrap').innerHTML = '';
+        });
+    }
+
+    
+    // Intelligence panels — additive consumption of enriched backend fields
+    // (contributing_factors, emerging_typology, socio_economic_note, recommendation).
+    function buildIntelligencePanels(d) {
+      const cf = d.contributing_factors || {};
+      const parts = [];
+      if (cf.baseline != null || cf.trend_contribution != null || cf.seasonal_contribution != null || cf.trend_direction || cf.seasonal_strength != null) {
+        const rows = [];
+        if (cf.baseline != null) rows.push(['Baseline', Number(cf.baseline).toFixed(0)]);
+        if (cf.trend_contribution != null) rows.push(['Trend Contribution', (cf.trend_contribution > 0 ? '+' : '') + Number(cf.trend_contribution).toFixed(0)]);
+        if (cf.seasonal_contribution != null) rows.push(['Seasonal Contribution', (cf.seasonal_contribution > 0 ? '+' : '') + Number(cf.seasonal_contribution).toFixed(0)]);
+        if (cf.trend_direction) rows.push(['Trend Direction', String(cf.trend_direction).toUpperCase()]);
+        if (cf.seasonal_strength != null) rows.push(['Seasonal Strength', Number(cf.seasonal_strength).toFixed(2)]);
+        if (cf.trend_acceleration != null) rows.push(['Trend Acceleration', (cf.trend_acceleration > 0 ? '+' : '') + Number(cf.trend_acceleration).toFixed(1)]);
+        if (cf.seasonal_peak_month) rows.push(['Seasonal Peak Month', cf.seasonal_peak_month]);
+        parts.push(`<div class="section-title-sm" style="margin-top:18px">Contributing Factors (Model Decomposition)</div>
+          <div style="background:rgba(15,23,42,0.6); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:10px 14px; font-size:12px;">
+            ${rows.map(([k,v]) => `<div style="display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px solid rgba(255,255,255,0.04)"><span style="color:#94a3b8">${k}</span><b style="color:#60a5fa">${v}</b></div>`).join('')}
+          </div>`);
+      }
+      if (d.emerging_typology && d.emerging_typology.length) {
+        parts.push(`<div class="section-title-sm" style="margin-top:16px">Emerging Typology Forecast</div>
+          <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:6px">
+            ${d.emerging_typology.map(t => `<div style="background:rgba(139,92,246,0.12); border:1px solid rgba(139,92,246,0.3); color:#c4b5fd; padding:6px 12px; border-radius:8px; font-size:12px; font-weight:600">${t.typology || t.crime_head || t.name || t} ${t.slope != null ? '<span style="color:#a78bfa; font-weight:400">· ' + Number(t.slope).toFixed(1) + '/mo</span>' : ''}</div>`).join('')}
+          </div>`);
+      }
+      if (d.socio_economic_note) {
+        parts.push(`<div class="section-title-sm" style="margin-top:16px">Socio-Economic Context</div>
+          <div style="background:rgba(15,23,42,0.6); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:12px 14px; color:#94a3b8; font-size:12px; line-height:1.5">📊 ${d.socio_economic_note}</div>`);
+      }
+      if (d.resource_gap_analysis) {
+        const rg = d.resource_gap_analysis;
+        const gapColor = rg.gap_status === "understaffed" ? (rg.gap_severity === "critical" ? "#ef4444" : "#fbbf24") : "#10b981";
+        const gapRows = [];
+        if (rg.police_strength != null) gapRows.push(["Police Strength", rg.police_strength.toLocaleString() + " officers"]);
+        if (rg.predicted_cases != null) gapRows.push(["Predicted Caseload", rg.predicted_cases + " /mo"]);
+        if (rg.officer_to_case_ratio != null) gapRows.push(["Officer:Case Ratio", "1 : " + Math.round(1 / rg.officer_to_case_ratio).toLocaleString()]);
+        if (rg.adequate_threshold != null) gapRows.push(["Adequate Threshold", rg.adequate_threshold.toLocaleString() + " officers"]);
+        if (rg.shortfall != null && rg.shortfall > 0) gapRows.push(["Shortfall", rg.shortfall.toLocaleString() + " officers"]);
+        parts.push(`<div class="section-title-sm" style="margin-top:16px">Resource Gap Analysis (Employee Data)</div>
+          <div style="background:rgba(15,23,42,0.6); border:1px solid ${gapColor}44; border-radius:8px; padding:10px 14px; font-size:12px;">
+            ${gapRows.map(([k,v]) => `<div style="display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px solid rgba(255,255,255,0.04)"><span style="color:#94a3b8">${k}</span><b style="color:${gapColor}">${v}</b></div>`).join("")}
+            <div style="margin-top:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.06); color:${gapColor}; font-weight:600; font-size:11px; text-transform:uppercase">● ${String(rg.gap_status).toUpperCase()} ${rg.gap_severity && rg.gap_severity !== "none" ? "· " + String(rg.gap_severity).toUpperCase() : ""}</div>
+          </div>`);
+      }
+      if (d.recommendation) {
+        parts.push(`<div class="section-title-sm" style="margin-top:16px">Deployment Recommendation</div>
+          <div style="background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.25); border-radius:8px; padding:12px 14px; color:#6ee7b7; font-size:12px; line-height:1.5">⚙ ${d.recommendation}</div>`);
+      }
+      return parts.join('');
+    }
+
+function renderResult(d) {
+      if (d.status === 'insufficient_data' || d.status === 'no_units_found') {
+        document.getElementById('info').innerHTML =
+          `<span style="color:#eab308">Status: <b>${d.status.toUpperCase()}</b>. Insufficient data to compile predictions for this district and category.</span>`;
+        return;
+      }
+
+      document.getElementById('info').innerText = 'Forecasting calculations completed successfully.';
+
+      document.getElementById('resultWrap').innerHTML = `
+        <div class="scoreCard ${d.risk_level}">
+          <div class="scoreNum">${d.risk_score}</div>
+          <div class="scoreLabel">${d.risk_level} RISK ZONE</div>
+          <div class="detailGrid">
+            <div>
+              <div class="label">Forecast Trend</div>
+              <div class="value" style="color: ${d.trend_slope_per_month != null ? (d.trend_slope_per_month > 0 ? '#ef4444' : d.trend_slope_per_month < 0 ? '#10b981' : '#94a3b8') : '#94a3b8'}">
+                ${d.trend_slope_per_month != null ? (d.trend_slope_per_month > 0 ? '▲ +' : d.trend_slope_per_month < 0 ? '▼ ' : '― ') + Number(d.trend_slope_per_month).toFixed(1) + '/mo' : '―'}
+              </div>
+            </div>
+            <div>
+              <div class="label">Predicted Next Month</div>
+              <div class="value">${d.predicted_next_month} cases</div>
+            </div>
+            <div>
+              <div class="label">Historical Average</div>
+              <div class="value">${d.historical_avg}/mo</div>
+            </div>
+            <div>
+              <div class="label">AI Confidence</div>
+              <div class="value" style="text-transform: uppercase; font-size: 14px; color: ${d.confidence === 'high' ? '#10b981' : '#eab308'}">
+                ${d.confidence}
+              </div>
+            </div>
+          </div>
+          ${buildIntelligencePanels(d)}
+        </div>
+      `;
+    }
+  </script>
+</body>
+</html>

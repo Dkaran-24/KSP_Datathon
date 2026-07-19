@@ -1,0 +1,11 @@
+{
+	"deployment": {
+		"name": "getNetworkData",
+		"stack": "python_3_13",
+		"type": "basicio",
+		"env_variables": {}
+	},
+	"execution": {
+		"main": "main.py"
+	}
+}

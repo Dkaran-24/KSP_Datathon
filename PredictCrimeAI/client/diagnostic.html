@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>CrimePredictAI — API Diagnostic Tool</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      margin: 0;
+      padding: 0;
+      background: #0b0f19;
+      color: #f1f5f9;
+      font-family: 'Inter', sans-serif;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Left Sidebar Navigation */
+    .sidebar-nav {
+      width: 260px;
+      height: 100vh;
+      background: #0f172a;
+      border-right: 1px solid rgba(59, 130, 246, 0.15);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      z-index: 100;
+    }
+    .sidebar-brand {
+      padding: 24px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .brand-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .brand-subtitle {
+      font-size: 10px;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 4px;
+    }
+    .sidebar-menu {
+      flex: 1;
+      padding: 20px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      overflow-y: auto;
+    }
+    .menu-link {
+      text-decoration: none;
+      color: #94a3b8;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 10px 16px;
+      border-radius: 8px;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .menu-link:hover {
+      color: #3b82f6;
+      background: rgba(59, 130, 246, 0.06);
+    }
+    .menu-link.active {
+      color: #fff;
+      background: linear-gradient(135deg, #1d4ed8, #3b82f6);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+    }
+    .sidebar-footer {
+      padding: 20px;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .dispatch-btn {
+      width: 100%;
+      background: #7f1d1d;
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      padding: 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.3s;
+    }
+    .dispatch-btn:hover {
+      background: #ef4444;
+      color: #fff;
+      box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+    }
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: #10b981;
+    }
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #10b981;
+      animation: pulse-dot 1.5s infinite;
+    }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    .help-link {
+      font-size: 11px;
+      color: #64748b;
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .help-link:hover {
+      color: #94a3b8;
+    }
+
+    /* Main Content Wrapper */
+    .main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Top Header Panel */
+    .top-header {
+      height: 70px;
+      background: #0f172a;
+      border-bottom: 1px solid rgba(59, 130, 246, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      flex-shrink: 0;
+    }
+    .header-left h1 {
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+      margin: 0;
+      letter-spacing: 0.5px;
+    }
+    .search-box {
+      width: 320px;
+      position: relative;
+    }
+    .search-box input {
+      width: 100%;
+      background: #0b0f19;
+      border: 1px solid rgba(59, 130, 246, 0.2);
+      border-radius: 8px;
+      padding: 8px 16px;
+      color: #fff;
+      font-size: 12px;
+      outline: none;
+      transition: border-color 0.3s;
+    }
+    .search-box input:focus {
+      border-color: #3b82f6;
+    }
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .icon-action {
+      color: #94a3b8;
+      cursor: pointer;
+      font-size: 16px;
+      transition: color 0.2s;
+    }
+    .icon-action:hover {
+      color: #fff;
+    }
+    .user-profile {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(30, 41, 59, 0.5);
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(59, 130, 246, 0.1);
+      font-size: 11px;
+    }
+    .user-profile b {
+      color: #fff;
+    }
+    .user-profile span {
+      color: #64748b;
+      font-size: 10px;
+    }
+    .logout-icon-btn {
+      background: none;
+      border: none;
+      color: #f87171;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      padding: 6px 12px;
+      border-radius: 6px;
+      transition: all 0.3s;
+      border: 1px solid rgba(248, 113, 113, 0.2);
+      background: rgba(248, 113, 113, 0.05);
+    }
+    .logout-icon-btn:hover {
+      background: rgba(239, 68, 68, 0.8);
+      color: #fff;
+      border-color: #ef4444;
+    }
+
+    #content {
+      flex: 1;
+      padding: 32px;
+      overflow-y: auto;
+      background: #0b0f19;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    h1 {
+      font-size: 24px;
+      font-weight: 800;
+      color: #60a5fa;
+    }
+    .info-bar {
+      font-size: 13px;
+      color: #94a3b8;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(15, 23, 42, 0.4);
+      padding: 12px 20px;
+      border-radius: 10px;
+      border: 1px solid rgba(59, 130, 246, 0.1);
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 12px;
+    }
+    button {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: background 0.2s;
+    }
+    button:hover {
+      background: #2563eb;
+    }
+    button.secondary {
+      background: rgba(30, 41, 59, 0.8);
+      border: 1px solid rgba(59, 130, 246, 0.2);
+      color: #94a3b8;
+    }
+    button.secondary:hover {
+      background: rgba(30, 41, 59, 1);
+      color: #fff;
+    }
+
+    #results {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .endpoint {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(59, 130, 246, 0.15);
+      border-radius: 12px;
+      padding: 20px;
+      transition: border-color 0.2s;
+    }
+    .endpoint h3 {
+      margin: 0 0 8px;
+      font-size: 15px;
+      color: #e2e8f0;
+      font-weight: 700;
+    }
+    .status {
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-weight: 700;
+      font-size: 10px;
+      display: inline-block;
+      margin-bottom: 12px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    .status.success { background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .status.error { background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); }
+    .status.pending { background: rgba(251, 191, 36, 0.15); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.3); }
+
+    .url-info {
+      font-size: 11px;
+      color: #64748b;
+      margin-bottom: 10px;
+      word-break: break-all;
+    }
+
+    pre {
+      background: #090d16;
+      padding: 14px;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-size: 12px;
+      color: #94a3b8;
+      border: 1px solid rgba(255, 255, 255, 0.03);
+      max-height: 250px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Left Sidebar Navigation -->
+  <div class="sidebar-nav">
+    <div class="sidebar-brand">
+      <div class="brand-title">🚨 KSP Intelligence</div>
+      <div class="brand-subtitle">Crime Intelligence Unit</div>
+    </div>
+    <div class="sidebar-menu">
+      <a href="index.html" class="menu-link">🗺 Strategic Command</a>
+      <a href="category.html" class="menu-link">📊 Category Breakdown</a>
+      <a href="trends.html" class="menu-link">📈 Historical Trends</a>
+      <a href="network.html" class="menu-link">🕸 Link Analysis</a>
+      <a href="anomalies.html" class="menu-link">🚨 Anomaly Alerts</a>
+      <a href="risk.html" class="menu-link">🔮 Predictive Risk</a>
+      <a href="diagnostic.html" class="menu-link active">⚙ Diagnostics</a>
+    </div>
+    <div class="sidebar-footer">
+      <button class="dispatch-btn" onclick="alert('Dispatch units alerted.')">🚨 Emergency Dispatch</button>
+      <div class="status-indicator">
+        <div class="status-dot"></div>
+        <span>System Status: Active</span>
+      </div>
+      <a href="#" class="help-link">Intelligence Help Desk</a>
+    </div>
+  </div>
+
+  <!-- Main Content Wrapper -->
+  <div class="main-content">
+    <!-- Top Header Panel -->
+    <header class="top-header">
+      <div class="header-left">
+        <h1>Strategic Intelligence Hub</h1>
+      </div>
+      <div class="search-box">
+        <input type="text" placeholder="Search Intelligence Database...">
+      </div>
+      <div class="header-right">
+        <span class="icon-action">🔔</span>
+        <span class="icon-action">⚙</span>
+        <div class="user-profile">
+          👤 <div><b>SP - Bengaluru</b><br><span>Session: KSP-8821</span></div>
+        </div>
+        <button onclick="handleLogout()" class="logout-icon-btn" title="Secure Logout">🚪 Logout</button>
+      </div>
+    </header>
+
+  <div id="content">
+    <h1>API Diagnostic Tool</h1>
+    <div class="info-bar">
+      <span>This module tests and validates connectivity for all serverless functions of the platform.</span>
+      <div class="btn-group">
+        <button onclick="testAll()">Test All Endpoints</button>
+        <button class="secondary" onclick="clearResults()">Clear Logs</button>
+      </div>
+    </div>
+
+    <div id="results"></div>
+  </div> <!-- Close #content -->
+  </div> <!-- Close .main-content wrapper -->
+
+  <script>
+    function handleLogout() {
+      alert("Session logged out successfully (local storage cleared).");
+      localStorage.removeItem("loggedIn");
+      localStorage.removeItem("username");
+      window.location.href = "login.html";
+    }
+
+    const isLocal = window.location.hostname === "localhost" || 
+                    window.location.hostname === "127.0.0.1" || 
+                    window.location.protocol === "file:";
+
+    const BASE = isLocal || window.location.hostname.includes(".development.")
+        ? "https://predictcrimeai-60074448608.development.catalystserverless.in"
+        : "https://predictcrimeai-60074448608.catalystserverless.in";
+
+    const BASE_URL = isLocal ? BASE : window.location.origin;
+
+    const endpoints = [
+        { name: 'getDistrictCrimeStats', url: '/server/getDistrictCrimeStats/execute' },
+        { name: 'getCrimeTrends', url: '/server/getCrimeTrends/execute' },
+        { name: 'detectAnomalies', url: '/server/detectAnomalies/execute' },
+        { name: 'getCrimeCategoryBreakdown', url: '/server/getCrimeCategoryBreakdown/execute' },
+        { name: 'getNetworkData', url: '/server/getNetworkData/execute' },
+        { name: 'predictCrimeRisk', url: '/server/predictCrimeRisk/execute' },
+        { name: 'getHiddenCorrelations', url: '/server/getHiddenCorrelations/execute' },
+        { name: 'getSocioEconomicCorrelation', url: '/server/getSocioEconomicCorrelation/execute' }
+    ];
+
+    async function testEndpoint(name, path) {
+        const fullUrl = path.startsWith('http') ? path : `${BASE_URL}${path}`;
+        
+        const resultDiv = document.createElement('div');
+        resultDiv.className = 'endpoint';
+        resultDiv.innerHTML = `
+            <h3>${name}</h3>
+            <div class="status pending">Testing Connection...</div>
+            <div class="url-info">Endpoint Target: ${fullUrl}</div>
+            <pre class="response">Initiating handshake...</pre>
+        `;
+        document.getElementById('results').appendChild(resultDiv);
+
+        const statusEl = resultDiv.querySelector('.status');
+        const responseEl = resultDiv.querySelector('.response');
+
+        try {
+            const startTime = performance.now();
+            const response = await fetch(fullUrl);
+            const elapsed = (performance.now() - startTime).toFixed(0);
+
+            const text = await response.text();
+            let isJson = false;
+            let parsed = null;
+            
+            try {
+                parsed = JSON.parse(text);
+                isJson = true;
+            } catch (e) {
+                isJson = false;
+            }
+
+            if (response.ok && isJson) {
+                statusEl.className = 'status success';
+                statusEl.textContent = `SUCCESS (${response.status}) - ${elapsed}ms`;
+                responseEl.textContent = JSON.stringify(parsed, null, 2);
+            } else if (!response.ok) {
+                statusEl.className = 'status error';
+                statusEl.textContent = `HTTP ERROR ${response.status} - ${elapsed}ms`;
+                responseEl.textContent = text.substring(0, 1000);
+            } else {
+                statusEl.className = 'status error';
+                statusEl.textContent = `INVALID JSON RESPONSE - ${elapsed}ms`;
+                responseEl.textContent = text.substring(0, 1000);
+            }
+
+        } catch (error) {
+            statusEl.className = 'status error';
+            statusEl.textContent = 'NETWORK TIMEOUT / REFUSED';
+            responseEl.textContent = error.toString();
+        }
+    }
+
+    async function testAll() {
+        document.getElementById('results').innerHTML = '';
+        for (const ep of endpoints) {
+            await testEndpoint(ep.name, ep.url);
+            await new Promise(r => setTimeout(r, 300));
+        }
+    }
+
+    function clearResults() {
+        document.getElementById('results').innerHTML = '';
+    }
+
+    // Auto-run on mount
+    window.onload = testAll;
+  </script>
+</body>
+</html>
